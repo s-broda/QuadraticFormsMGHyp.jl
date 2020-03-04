@@ -77,7 +77,7 @@ function qfmgh(
     qq = x .- kk
     ccdf = similar(float(x))
     pm = similar(float(x))
-    M, alpha2p, dM0da1, alpha1p, M0, lrhop = get_funcs(omega, de, e2, d2, c, k, LK2, lam, chi, psi)
+    M, alpha2p, dM0da1, alpha1p, M0, lrhop = get_funcs(omega, de[:], e2[:], d2[:], c, k, LK2, lam, chi, psi)
     #Threads.@threads
     for i = 1:length(qq)
         q = qq[i]
