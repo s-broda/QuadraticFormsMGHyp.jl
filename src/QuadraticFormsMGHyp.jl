@@ -4,7 +4,7 @@ using LinearAlgebra
 using Roots
 using SpecialFunctions: besselk #, lgamma
 using QuadGK: quadgk
-using StatsFuns: normcdf, normpdf
+using StatsFuns: normcdf, normpdf, logtwo
 # work around https://github.com/JuliaMath/SpecialFunctions.jl/issues/186
 # until https://github.com/JuliaDiff/ForwardDiff.jl/pull/419/ is merged
 using Base.Math: libm
@@ -13,7 +13,6 @@ using ForwardDiff: Dual, value, partials, derivative
 @inline lgamma(x::Float32) = ccall((:lgammaf, libm), Float32, (Float32,), x)
 @inline lgamma(d::Dual{T}) where {T} =
     Dual{T}(lgamma(value(d)), digamma(value(d)) * partials(d))
-Base.@irrational logtwo 0.6931471805599453094 log(big(2.0))
 Base.@irrational rp 0.3183098861837906715 1 / big(pi)
 
 export qfmgh
@@ -39,7 +38,7 @@ Keyword arguments:
 """
 function qfmgh end
 
-qfmgh(x::Number, args...; kwargs...) = getindex.(qfmgh_cdf([x], args...; kwargs...), 1)
+qfmgh(x::Number, args...; kwargs...) = getindex.(qfmgh([x], args...; kwargs...), 1)
 
 function qfmgh(
     x::AbstractVector,
@@ -79,7 +78,8 @@ function qfmgh(
     ccdf = similar(float(x))
     pm = similar(float(x))
     M, alpha2p, dM0da1, alpha1p, M0, lrhop = get_funcs(omega, de, e2, d2, c, k, LK2, lam, chi, psi)
-    Threads.@threads for i = 1:length(qq)
+    #Threads.@threads
+    for i = 1:length(qq)
         q = qq[i]
         if ~do_spa
             ccdf[i], _ = quadgk(s -> imag(M(1im * s, -1im * s * q) / s), 0.0, Inf)
