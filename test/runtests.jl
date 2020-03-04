@@ -133,6 +133,7 @@ for nuloop=1:length(nuvec)
     pdf[nuloop, :] = (cdf2 .- cdf) ./ h
     spapdf[nuloop, :] = (spacdf2 .- spacdf) ./ h
 end
+spapdf[abs.(pdf.-spapdf) .> .1] .= NaN # filter errors due to nonsingularity around the mean
 plot(xvec, pdf', color=collect(1:7)', labels=permutedims("v=".*string.(nuvec)))
 plot!(xvec, spapdf', color=collect(1:7)', labels="", ls=:dash)
 xlabel!("x")
