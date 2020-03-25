@@ -5,7 +5,7 @@ n = 25
 beta = 0.
 k = 1
 Z = randn(n, k)
-In = collect(I(n))
+In = diagm(ones(n))
 Z = In[:, 1:k] * (Z'*Z)^(.5) # distribution depends on Z only through Z'Z if R=I
 alpha = 0.
 if abs(alpha) >= 1.
