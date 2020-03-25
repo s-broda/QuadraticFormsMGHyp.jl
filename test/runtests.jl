@@ -6,7 +6,11 @@ using FinancialToolbox
 using ToeplitzMatrices
 using Random
 pgfplotsx()
-doplot = true
+if haskey(ENV, "CI")
+    doplot = false
+else
+    doplot = true
+end
 @testset "2sls" begin
     include("2sls.jl")
     @test spapdf[1, 1] ≈ 0.017712289301918815
