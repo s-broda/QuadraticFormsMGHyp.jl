@@ -9,12 +9,12 @@ In = diagm(ones(n))
 Z = In[:, 1:k] * (Z'*Z)^(.5) # distribution depends on Z only through Z'Z if R=I
 alpha = 0.
 if abs(alpha) >= 1.
-     b = 0.
+     bb = 0.
 else
-     b = 1 / sqrt(1-alpha^2)
+     bb = 1 / sqrt(1-alpha^2)
 end
 R = Toeplitz(alpha .^(0:n-1), vcat(1., zeros(n-1))) * I
-R[:, 1] = b * R[:, 1]
+R[:, 1] = bb * R[:, 1]
 R = R ./ sqrt(tr(R * R') / n)
 mu = .5
 conc_param = [sqrt(mu / k)] * (Z' * Z)^(-.5) * ones(k, 1)
