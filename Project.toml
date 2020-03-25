@@ -4,13 +4,14 @@ authors = ["Simon Broda"]
 version = "0.1.0"
 
 [deps]
+FinancialToolbox = "2edd74a5-e968-5e45-af77-76d29aa6a478"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+PGFPlotsX = "8314cec4-20b6-5062-9cdb-752b83310925"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 StatsFuns = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
-ToeplitzMatrices = "c751599d-da0a-543b-9d20-d0a503d91d24"
 
 [compat]
 ForwardDiff = "0.10"
@@ -21,8 +22,10 @@ StatsFuns = "0.9.4"
 julia = "1"
 
 [extras]
+FinancialToolbox = "2edd74a5-e968-5e45-af77-76d29aa6a478"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+ToeplitzMatrices = "c751599d-da0a-543b-9d20-d0a503d91d24"
 
 [targets]
-test = ["Test", "Plots", "ToeplitzMatrices"]
+test = ["Test", "Plots", "ToeplitzMatrices", "FinancialToolbox"]
