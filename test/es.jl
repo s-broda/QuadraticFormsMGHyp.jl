@@ -1,7 +1,5 @@
-import QuadraticFormsMGHyp: lklam
-
 portfolio = 1 # between 1 and 16; these are the portfolios from Broda (2012)
-xvec = 3.5:.01:17.5 # results in VaR levels up to 10% for portfolio 1 for NIG with chi=psi=1
+xvec2 = 3.5:.01:17.5 # results in VaR levels up to 10% for portfolio 1 for NIG with chi=psi=1
 
 lam = -.5
 chi = 1
@@ -57,14 +55,5 @@ V = exp(lklam(lam+1, chi, psi) - lklam(lam, chi, psi)) # variance, assuming gamm
 Sigma = sigs * R * sigs / V # the dispersion matrix
 C = ((Sigma + Sigma') / 2) ^ .5 # and its square root
 a0 = -h * sum(number.*theta)
-ccdf, pm = qfmgh(xvec, a0, a, A, C, zeros(m), zeros(m), lam, chi, psi; do_spa=false)
-ccdfspa, pmspa = qfmgh(xvec, a0, a, A, C, zeros(m), zeros(m), lam, chi, psi; do_spa=true, order=2)
-if doplot
-    plot(ccdf, pm, labels="", lw=1.25)
-    plot!(ccdfspa, pmspa, ls=:dash, lw=1.25, labels="")
-    xlabel!("VaR level \$\\alpha\$")
-    ylabel!("\$ES_L^{(\\alpha)}\$")
-    title!("Exact (solid) and approximate (dashes) expected shortfall")
-    savefig("ES.pdf")
-    savefig("ES.eps")
-end
+ccdf, pm = qfmgh(xvec2, a0, a, A, C, zeros(m), zeros(m), lam, chi, psi; do_spa=false)
+ccdfspa, pmspa = qfmgh(xvec2, a0, a, A, C, zeros(m), zeros(m), lam, chi, psi; do_spa=true, order=2)

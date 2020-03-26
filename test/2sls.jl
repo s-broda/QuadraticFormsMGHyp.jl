@@ -88,12 +88,3 @@ thepdf = (cdf2 .- cdf) ./ h
 thespapdf = (spacdf2 .- spacdf) ./ h
 
 thespapdf[abs.(thepdf .- thespapdf) .> .1] .= NaN # filter errors due to nonsingularity around the mean
-if doplot
-    plot(xvec, thepdf', color=collect(1:length(nuvec))', lw=1.25, labels=permutedims("\$\\nu =".*string.(nuvec).*"\$"))
-    plot!(xvec, thespapdf', color=collect(1:length(nuvec))', lw=1.25, labels="", ls=:dash)
-    xlabel!("\$\\hat{\\beta}_{2SLS}\$")
-    ylabel!("\$f(\\hat{\\beta}_{2SLS})\$")
-    title!("Exact (solid) and approximate (dashes) densities")
-    savefig("2sls_t.eps")
-    savefig("2sls_t.pdf")
-end
