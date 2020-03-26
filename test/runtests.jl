@@ -24,8 +24,8 @@ end
     p1 = plot(xvec, cdf', color=collect(1:length(nuvec))', lw=1.25, legend=:topleft, labels=permutedims("\$\\nu =".*string.(nuvec).*"\$"))
     plot!(xvec, spacdf', color=collect(1:length(nuvec))', lw=1.25, labels="", ls=:dash)
     xlabel!("\$\\hat{\\beta}_{2SLS}\$")
-    ylabel!("\$f(\\hat{\\beta}_{2SLS})\$")
-    title!("Exact (solid) and approximate (dashes) densities")
+    ylabel!("\$F(\\hat{\\beta}_{2SLS})\$")
+    title!("Exact (solid) and approximate (dashes) distributions")
 
     p2 = plot(ccdf, pm, labels="", lw=1.25)
     plot!(ccdfspa, pmspa, ls=:dash, lw=1.25, labels="")
