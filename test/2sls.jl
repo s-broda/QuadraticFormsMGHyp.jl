@@ -27,18 +27,16 @@ nuvec = 3:2:5
 h = 1e-6
 Zp = Z * conc_param
 Pz = Z * inv(Z' * Z) * Z'
-xvec = beta-3:.02:beta+3
+xvec = beta-3:.01:beta+3
 #E = eigen(.5*Pz+.5*Pz')
 #[pp,ll]=eig(.5*Pz+.5*Pz')
 nx = length(xvec)
-pdf = zeros(length(nuvec), nx)
-cdf = similar(pdf)
-cdf2 = similar(pdf)
-pm = similar(pdf)
-spapdf = similar(pdf)
-spacdf = similar(pdf)
-spacdf2 = similar(pdf)
-spapm =  similar(pdf)
+cdf = zeros(length(nuvec), nx)
+cdf2 = similar(cdf)
+pm = similar(cdf)
+spacdf = similar(cdf)
+spacdf2 = similar(cdf)
+spapm =  similar(cdf)
 #Threads.@threads
 for nuloop=1:length(nuvec)
     nu = nuvec[nuloop]
@@ -84,15 +82,17 @@ for nuloop=1:length(nuvec)
         spapm[nuloop, loop] = p
     end
 end
-pdf .= (cdf2 .- cdf) ./ h
-spapdf .= (spacdf2 .- spacdf) ./ h
+spacdf[isnan.(spacdf)] .= 0
+spacdf2[isnan.(spacdf2)] .= 0
+thepdf = (cdf2 .- cdf) ./ h
+thespapdf = (spacdf2 .- spacdf) ./ h
 
-spapdf[abs.(pdf.-spapdf) .> .1] .= NaN # filter errors due to nonsingularity around the mean
+thespapdf[abs.(thepdf .- thespapdf) .> .1] .= NaN # filter errors due to nonsingularity around the mean
 if doplot
-    plot(xvec, pdf', color=collect(1:7)', labels=permutedims("v=".*string.(nuvec)))
-    plot!(xvec, spapdf', color=collect(1:7)', labels="", ls=:dash)
-    xlabel!("x")
-    ylabel!("pdf")
-    title!("Exact density (solid) and SPA (dashes)")
+    plot(xvec, thepdf', color=collect(1:length(nuvec))', lw=1.25, labels=permutedims("\$\\nu =".*string.(nuvec).*"\$"))
+    plot!(xvec, thespapdf', color=collect(1:length(nuvec))', lw=1.25, labels="", ls=:dash)
+    xlabel!("\$\\hat{\\beta}_{2SLS}\$")
+    ylabel!("\$f(\\hat{\\beta}_{2SLS})\$")
+    title!("Exact (solid) and approximate (dashes) densities")
     savefig("pdfs.svg")
 end

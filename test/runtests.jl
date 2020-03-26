@@ -13,13 +13,10 @@ else
 end
 @testset "2sls" begin
     include("2sls.jl")
-    @test isapprox(spapdf[1, 1], 0.017712289301918815, atol=1e-4)
-    @test isapprox(pdf[1, 1], 0.01713868502672966, rtol=1e-4)
+    @test sum(abs2.(cdf - spacdf)) / length(cdf) < 0.001    
 end
 @testset "es" begin
     include("es.jl")
-    @test isapprox(ccdf[1, 1], 0.10068491359055437, rtol=1e-4)
-    @test isapprox(pm[1, 1], 5.724342391411737, rtol=1e-4)
-    @test isapprox(ccdfspa[1, 1], 0.10068589716980002, rtol=1e-4)
-    @test isapprox(pmspa[1,1 ], 5.56146456788597, rtol=1e-4)
+    @test sum(abs2.(ccdf - ccdfspa)) / length(ccdf) < 0.0001
+    @test sum(abs2.(pm - pmspa)) / length(pm) < 0.1
 end
