@@ -36,7 +36,7 @@ pm = similar(cdf)
 spacdf = similar(cdf)
 spacdf2 = similar(cdf)
 spapm =  similar(cdf)
-#Threads.@threads
+
 for nuloop=1:length(nuvec)
     nu = nuvec[nuloop]
     for loop = 1 : nx
