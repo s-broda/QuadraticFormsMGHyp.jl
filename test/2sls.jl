@@ -22,9 +22,8 @@ s2u = 1.
 s2v = 1.
 rho = 1.
 suv = sqrt(s2u * s2v) * rho
-nuvec = 3:2:5
+nuvec = [3, 9]
 
-h = 1e-6
 Zp = Z * Pi
 Pz = Z * inv(Z' * Z) * Z'
 xvec = beta-3:.01:beta+3
@@ -60,31 +59,4 @@ for nuloop=1:length(nuvec)
         spacdf[nuloop, loop] = 1.0 - ccdf
         spapm[nuloop, loop] = p
     end
-    xvech = xvec .+ h
-    for loop = 1 : nx
-        Si = ((nu-2) / nu * [s2u suv; suv s2v])^.5 # rescale to make Si^2 the covariance matrix
-        S = kron(Si, R*R')
-        b = xvech[loop] - beta
-        a0 = (-b * (Zp' * Zp))[1]
-        a = [Zp; -2*b*Zp]
-        A = .5*[Pz*0 Pz; Pz -2*b*Pz]
-        SAS = S * A * S
-        SAS = .5*(SAS+SAS')
-        E = eigen(SAS)
-        P = E.vectors
-        omega = E.values
-        d = a' * S * P
-        ccdf, p = qfmgh(0., a0, a[:], A, S, zeros(2n), zeros(2n), -nu/2, nu, 0., do_spa=false)
-        cdf2[nuloop, loop] = 1.0 - ccdf
-        pm[nuloop, loop] = p
-        ccdf, p = qfmgh(0., a0, a[:], A, S, zeros(2n), zeros(2n), -nu/2, nu, 0., do_spa=true, order=order)
-        spacdf2[nuloop, loop] = 1.0 - ccdf
-        spapm[nuloop, loop] = p
-    end
 end
-spacdf[isnan.(spacdf)] .= 0
-spacdf2[isnan.(spacdf2)] .= 0
-thepdf = (cdf2 .- cdf) ./ h
-thespapdf = (spacdf2 .- spacdf) ./ h
-
-thespapdf[abs.(thepdf .- thespapdf) .> .1] .= NaN # filter errors due to nonsingularity around the mean
