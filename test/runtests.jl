@@ -23,8 +23,8 @@ end
     spacdf[abs.(cdf .- spacdf) .> .1] .= NaN # filter errors due to singularity around the mean
     p1 = plot(xvec, cdf', color=collect(1:length(nuvec))', lw=1.25, legend=:topleft, labels=permutedims("\$\\nu =".*string.(nuvec).*"\$"))
     plot!(xvec, spacdf', color=collect(1:length(nuvec))', lw=1.25, labels="", ls=:dash)
-    xlabel!("\$\\hat{\\beta}_{2SLS}\$")
-    ylabel!("\$F(\\hat{\\beta}_{2SLS})\$")
+    xlabel!("\$x\$")
+    ylabel!("\$\\mathrm{pr}(\\hat{\\beta}_{2SLS}< x)\$")
     title!("Exact (solid) and approximate (dashes) distributions")
 
     p2 = plot(ccdf, pm, labels="", lw=1.25)
