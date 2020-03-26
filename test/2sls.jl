@@ -17,7 +17,7 @@ R = Toeplitz(alpha .^(0:n-1), vcat(1., zeros(n-1))) * I
 R[:, 1] = bb * R[:, 1]
 R = R ./ sqrt(tr(R * R') / n)
 mu = .5
-conc_param = [sqrt(mu / k)] * (Z' * Z)^(-.5) * ones(k, 1)
+Pi = [sqrt(mu / k)] * (Z' * Z)^(-.5) * ones(k, 1)
 s2u = 1.
 s2v = 1.
 rho = 1.
@@ -25,7 +25,7 @@ suv = sqrt(s2u * s2v) * rho
 nuvec = 3:2:5
 
 h = 1e-6
-Zp = Z * conc_param
+Zp = Z * Pi
 Pz = Z * inv(Z' * Z) * Z'
 xvec = beta-3:.01:beta+3
 #E = eigen(.5*Pz+.5*Pz')
