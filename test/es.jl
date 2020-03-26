@@ -65,5 +65,6 @@ if doplot
     xlabel!("VaR level \$\\alpha\$")
     ylabel!("\$ES_L^{(\\alpha)}\$")
     title!("Exact (solid) and approximate (dashes) expected shortfall")
-    savefig("ES.svg")
+    savefig("ES.pdf")
+    savefig("ES.eps")
 end

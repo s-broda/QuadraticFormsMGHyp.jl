@@ -94,5 +94,6 @@ if doplot
     xlabel!("\$\\hat{\\beta}_{2SLS}\$")
     ylabel!("\$f(\\hat{\\beta}_{2SLS})\$")
     title!("Exact (solid) and approximate (dashes) densities")
-    savefig("pdfs.svg")
+    savefig("2sls_t.eps")
+    savefig("2sls_t.pdf")
 end
