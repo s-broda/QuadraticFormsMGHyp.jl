@@ -41,9 +41,9 @@ for pfloop in portfolios
     end
 
     if equicorrelated
-        R = .5 * ones(m, m) + .5 * I(m) # the correlation matrix
+        R = .5 * ones(m, m) + .5 * I # the correlation matrix
     else
-        R = I(m)
+        R = I
     end
     # get initial option prices
     price = blsprice.(S0, K, r, T, sigma, 0.0, put)
@@ -56,9 +56,9 @@ for pfloop in portfolios
         stocks = zeros(m)
     end
     a = - delta .* number - stocks
-    A = diagm(-.5 * gamma .* number)
+    A = diagm(0=>-.5 * gamma .* number)
     portfolio_value = sum(price .* number) + sum(stocks .* S0)
-    sigs = diagm(sigma .* S0 * sqrt(h)) # price volatilities 250*h days ahead
+    sigs = diagm(0=>sigma .* S0 * sqrt(h)) # price volatilities 250*h days ahead
     Sigma = sigs * R * sigs * (df-2) / df # the dispersion matrix
     C = ((Sigma + Sigma') / 2) ^ .5 # and its square root
     a0 = -h * sum(number.*theta)
