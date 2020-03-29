@@ -125,23 +125,29 @@ function compute_spa(g, h, order)
     g0 = g(0.0)
     hp = s -> derivative(h, s)
     hpp = s -> derivative(hp, s)
+
     shat = find_zero(hp, 0.0)
-    what = sign(shat) * sqrt(-2 * (h(shat) - h0))
-    H = hpp(shat)
-    uhat = shat * sqrt(H)
-    ghat = g(shat)
-    spa = exp(h0) * (g0 * (1 - normcdf(what)) + normpdf(what) * (ghat / uhat - g0 / what))
-    if order == 2
-        gp = s -> derivative(g, s)
-        gpp = s -> derivative(gp, s)
-        hppp = s -> derivative(hpp, s)
-        hpppp = s -> derivative(hppp, s)
-        k3 = hppp(shat) / H^(3 // 2)
-        k4 = hpppp(shat) / H^2
-        T1 = ghat / uhat * ((k4 / 8 - 5 * k3^2 / 24) - uhat^-2 - k3 / (2 * uhat))
-        T2 = shat * gp(shat) / uhat * (1 / uhat^2 + k3 / (2 * uhat))
-        T3 = -gpp(shat) * shat^2 / (2 * uhat^3) + g0 * what^-3
-        spa = spa + exp(h0) * normpdf(what) * (T1 + T2 + T3)
+    if abs(h(shat) - h0)<1e-5
+        @warn("Saddlepoint approximation is inaccurate; returning NaN.")
+        spa = NaN
+    else
+        what = sign(shat) * sqrt(-2 * (h(shat) - h0))
+        H = hpp(shat)
+        uhat = shat * sqrt(H)
+        ghat = g(shat)
+        spa = exp(h0) * (g0 * (1 - normcdf(what)) + normpdf(what) * (ghat / uhat - g0 / what))
+        if order == 2
+            gp = s -> derivative(g, s)
+            gpp = s -> derivative(gp, s)
+            hppp = s -> derivative(hpp, s)
+            hpppp = s -> derivative(hppp, s)
+            k3 = hppp(shat) / H^(3 // 2)
+            k4 = hpppp(shat) / H^2
+            T1 = ghat / uhat * ((k4 / 8 - 5 * k3^2 / 24) - uhat^-2 - k3 / (2 * uhat))
+            T2 = shat * gp(shat) / uhat * (1 / uhat^2 + k3 / (2 * uhat))
+            T3 = -gpp(shat) * shat^2 / (2 * uhat^3) + g0 * what^-3
+            spa = spa + exp(h0) * normpdf(what) * (T1 + T2 + T3)
+        end
     end
     return spa
 end
