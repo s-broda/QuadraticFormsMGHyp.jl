@@ -1,4 +1,9 @@
 # computes the pdf of the 2SLS estimator under multivariate t errors
+using QuadraticFormsMGHyp
+using Random
+using ToeplitzMatrices
+using LinearAlgebra
+
 Random.seed!(0)
 order = 2
 n = 25

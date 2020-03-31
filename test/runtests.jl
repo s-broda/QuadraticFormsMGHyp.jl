@@ -1,10 +1,4 @@
-using QuadraticFormsMGHyp
-import QuadraticFormsMGHyp: lklam
 using Test
-using LinearAlgebra
-using FinancialToolbox
-using ToeplitzMatrices
-using Random
 using Plots
 
 @testset "2sls" begin

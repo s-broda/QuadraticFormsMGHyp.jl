@@ -1,3 +1,8 @@
+using QuadraticFormsMGHyp
+import QuadraticFormsMGHyp: lklam
+using FinancialToolbox
+using LinearAlgebra
+
 portfolio = 1 # between 1 and 16; these are the portfolios from Broda (2012)
 xvec2 = 3.5:.01:17.5 # results in VaR levels up to 10% for portfolio 1 for NIG with chi=psi=1
 
