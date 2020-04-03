@@ -88,12 +88,10 @@ function qfmgh(
             pm[i] = (M2(0, 0) / 2 + rp * pm[i]) / ccdf[i] + kk
         else
             ccdf[i] = compute_spa(s -> 1, s -> log(M(s, -q * s)), order)
-            pm[i] =
-                (
-                    compute_spa(alpha2p, s -> log(M(s, -q * s)), order) +
-                    compute_spa(alpha1p, s -> log(dM0da1(s, -q * s)), order) +
-                    compute_spa(lrhop, s -> log(M0(s, -q * s)), order)
-                ) / ccdf[i] + kk
+            I1 = all(d.==0) ? 0. : compute_spa(alpha2p, s -> log(M(s, -q * s)), order)
+            I2 = all(gam.==0) ? 0. : compute_spa(alpha1p, s -> log(dM0da1(s, -q * s)), order)
+            I3 = compute_spa(lrhop, s -> log(M0(s, -q * s)), order)
+            pm[i] = (I1 + I2 + I3) / ccdf[i] + kk
         end
     end
     return ccdf, pm
@@ -175,7 +173,7 @@ function get_funcs(omega, de, e2, d2, c, k, LK2, lam, chi, psi)
     )
     dM0da1(s, t) = exp(
         lklam(
-            lam + 1,
+            lam + 2,
             chi - 2 * (0.5 * s^2 * sum(d2 ./ (1 .- 2 * omega * s)) + t),
             psi - 2 * (k * s + 0.5 * s^2 * sum(e2 ./ (1 .- 2 * omega * s))),
         ) - LK2 +
