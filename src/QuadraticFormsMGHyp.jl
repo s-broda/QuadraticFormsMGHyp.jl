@@ -18,7 +18,7 @@ Base.@irrational rp 0.3183098861837906715 1 / big(pi)
 export qfmgh
 
 """
-    qfmgh(x, a0, a, A, C, mu, gam, lam, chi, psi; do_spa=false, order=2)
+    qfmgh(x::Union{AbstractVector{<:Real}, Real}, a0, a, A, C, mu, gam, lam, chi, psi; do_spa=false, order=2)
 
 Survivor function P(L>x) = 1-F(x) and
 tail conditional mean, E(L|L>x), of
@@ -38,10 +38,10 @@ Keyword arguments:
 """
 function qfmgh end
 
-qfmgh(x::Number, args...; kwargs...) = getindex.(qfmgh([x], args...; kwargs...), 1)
+qfmgh(x::Real, args...; kwargs...) = getindex.(qfmgh([x], args...; kwargs...), 1)
 
 function qfmgh(
-    x::AbstractVector,
+    x::AbstractVector{<:Real},
     a0,
     a,
     A,
