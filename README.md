@@ -6,7 +6,7 @@
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/s-broda/QuadraticFormsMGHyp.jl?svg=true)](https://ci.appveyor.com/project/s-broda/QuadraticFormsMGHyp-jl)
 [![Codecov](https://codecov.io/gh/s-broda/QuadraticFormsMGHyp.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/s-broda/QuadraticFormsMGHyp.jl)
 [![Coveralls](https://coveralls.io/repos/github/s-broda/QuadraticFormsMGHyp.jl/badge.svg?branch=master)](https://coveralls.io/github/s-broda/QuadraticFormsMGHyp.jl?branch=master)
-[![PkgEval](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/M/QuadraticFormsMGHyp.svg)](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/report.html)
+[![PkgEval](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/Q/QuadraticFormsMGHyp.svg)](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/report.html)
 A package for evaluating tail probabilities and partial moments for random vectors in multivariate generalized hyperbolic random vectors. Matlab and Fortran code is available [here](https://github.com/s-broda/es4mgh).
 
 # Installation
