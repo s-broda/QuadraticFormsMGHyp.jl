@@ -9,7 +9,6 @@ makedocs(;
     repo="https://github.com/s-broda/QuadraticFormsMGHyp.jl/blob/{commit}{path}#L{line}",
     sitename="QuadraticFormsMGHyp.jl",
     authors="Simon Broda",
-    assets=String[],
 )
 
 deploydocs(;
