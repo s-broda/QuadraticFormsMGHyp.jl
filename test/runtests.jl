@@ -16,16 +16,27 @@ end
     pgfplotsx()
     spacdf[abs.(cdf .- spacdf) .> .1] .= NaN # filter errors due to singularity around the mean
     p1 = plot(xvec, cdf', color=collect(1:length(nuvec))', lw=1.25, legend=:topleft, labels=permutedims("\$\\nu =".*string.(nuvec).*"\$"))
-    plot!(xvec, spacdf', color=collect(1:length(nuvec))', lw=1.25, labels="", ls=:dash)
-    xlabel!("\$x\$")
-    ylabel!("\$\\mathrm{pr}(\\hat{\\beta}_{2SLS}< x)\$")
-    title!("Exact (solid) and approximate (dashes) distributions")
-
+    plot!(
+        xvec,
+        spacdf',
+        color=collect(1:length(nuvec))',
+        lw=1.25,
+        labels="",
+        ls=:dash,
+        title="Exact (solid) and approximate (dashes) distributions",
+        xlabel="\$x\$",
+        ylabel="\$\\mathrm{pr}(\\hat{\\beta}_{2SLS}< x)\$"
+        )
     p2 = plot(ccdf, pm, labels="", lw=1.25)
-    plot!(ccdfspa, pmspa, ls=:dash, lw=1.25, labels="")
-    xlabel!("VaR level \$\\alpha\$")
-    ylabel!("\$ES_L^{(\\alpha)}\$")
-    title!("Exact (solid) and approximate (dashes) expected shortfall")
+    plot!(ccdfspa,
+        pmspa,
+        ls=:dash,
+        lw=1.25,
+        labels="",
+        xlabel="VaR level \$\\alpha\$",
+        ylabel="\$ES_L^{(\\alpha)}\$",
+        title="Exact (solid) and approximate (dashes) expected shortfall"
+        )
 
     plot(p1, p2, layout=@layout[a{1.25w, 1.25h} b{1.25w, 1.25h}])
     savefig("figure1.pdf")
