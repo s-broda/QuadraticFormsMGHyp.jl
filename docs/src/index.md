@@ -6,7 +6,7 @@ Consider the random variable
 ```math
 L\equiv a_0+\mathbf{a}^{\mathrm{\scriptscriptstyle T}}X+X^{\mathrm{\scriptscriptstyle T}}\mathbf{A}X,
 ```
-a quadratic plus a linear form in the random vector ``X``. Suppose ``X\sim \mathrm{MGHyp}(\boldsymbol{\mu},\mathbf{C},\boldsymbol{\gamma},\lambda,\chi,\psi)``; that is, ``X`` has a ``d``-variate generalized hyperbolic distribution with stochastic representation
+a quadratic plus a linear form in the random vector ``X\sim \mathrm{MGHyp}(\boldsymbol{\mu},\mathbf{C},\boldsymbol{\gamma},\lambda,\chi,\psi)``; i.e., ``X`` has a ``d``-variate generalized hyperbolic distribution with stochastic representation
 ```math
 X=\boldsymbol{\mu}+Y \boldsymbol{\gamma} +\surd{Y}\mathbf{C}Z,
 ```
@@ -18,9 +18,9 @@ where
 ```math
 k_\lambda(\chi,\psi)\equiv\begin{cases}\frac{\psi}{2}^{-\lambda}\Gamma(\lambda),\text{ if }\chi=0\\
 \frac{\chi}{2}^{\lambda}\Gamma(-\lambda),\text{ if }\psi=0\\
-2\left(\frac{\chi}{\psi}\right)^{\lambda/2}K_\lambda(\sqrt{\chi\psi}), \text{ if }\chi\neq0 \text{ and }\psi\neq0.\end{cases}
+2\left(\frac{\chi}{\psi}\right)^{\lambda/2}K_\lambda(\sqrt{\chi\psi}), \text{ if }\chi\neq0 \text{ and }\psi\neq0,\end{cases}
 ```
-Here, ``K_\lambda(z)`` is the modified Bessel function of the second kind of order ``\nu``.
+and ``K_\lambda(z)`` is the modified Bessel function of the second kind of order ``\nu``.
 
 The generalized hyperbolic distribution contains as special cases, among others, the Variance-Gamma (``\lambda>0``), Student's ``t`` (``\lambda=-\nu/2, \chi=\nu, \psi=0``), Normal Inverse Gaussian (``\lambda=-1/2``), and Hyperbolic (``\lambda=1``) distributions.
 
