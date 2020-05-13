@@ -151,48 +151,42 @@ function compute_spa(g, h, order)
 end
 
 function get_funcs(omega, de, e2, d2, c, k, LK2, lam, chi, psi)
-    M(s, t) = exp(
-        lklam(
-            lam,
-            chi - 2 * (0.5 * s^2 * sum(d2 ./ (1 .- 2 * omega * s)) + t),
-            psi - 2 * (k * s + 0.5 * s^2 * sum(e2 ./ (1 .- 2 * omega * s))),
-        ) - LK2 +
-        s * c +
-        s^2 * sum(de ./ (1 .- 2 * omega * s)) +
-        0.5 * sum(log, 1 ./ (1 .- 2 * omega * s)),
-    )
-    M0(s, t) = exp(
-        lklam(
-            lam + 1,
-            chi - 2 * (0.5 * s^2 * sum(d2 ./ (1 .- 2 * omega * s)) + t),
-            psi - 2 * (k * s + 0.5 * s^2 * sum(e2 ./ (1 .- 2 * omega * s))),
-        ) - LK2 +
-        s * c +
-        s^2 * sum(de ./ (1 .- 2 * omega * s)) +
-        0.5 * sum(log, 1 ./ (1 .- 2 * omega * s)),
-    )
-    dM0da1(s, t) = exp(
-        lklam(
-            lam + 2,
-            chi - 2 * (0.5 * s^2 * sum(d2 ./ (1 .- 2 * omega * s)) + t),
-            psi - 2 * (k * s + 0.5 * s^2 * sum(e2 ./ (1 .- 2 * omega * s))),
-        ) - LK2 +
-        s * c +
-        s^2 * sum(de ./ (1 .- 2 * omega * s)) +
-        0.5 * sum(log, 1 ./ (1 .- 2 * omega * s)),
-    )
-    lrhop(s) =
-        c +
-        2 * s * sum(de ./ (1 .- 2 * omega * s)) +
-        2 * s^2 * sum(de .* omega ./ (1 .- 2 * omega * s) .^ 2) +
-        sum(omega ./ (1 .- 2 * omega * s))
-    alpha1p(s) =
-        k +
-        s * sum(e2 ./ (1 .- 2 * omega * s)) +
-        s^2 * sum(e2 .* omega ./ (1 .- 2 * omega * s) .^ 2)
-    alpha2p(s) =
-        s * sum(d2 ./ (1 .- 2 * omega * s)) +
-        s^2 * sum(d2 .* omega ./ (1 .- 2 * omega * s) .^ 2)
+    @inline Theta(s, t, j) = (t1 = 0.; t2 = 0.; t3 = 0.; t4 = 0.;
+                              @inbounds @simd for i = 1:length(omega)
+                                  nu = 1 / (1 - 2 * omega[i] * s)
+                                  t1 += d2[i] * nu
+                                  t2 += e2[i] * nu
+                                  t3 += de[i] * nu
+                                  t4 += log(nu)
+                              end;
+                              exp(lklam(lam + j,
+                                        chi - 2 * (0.5 * s^2 * t1 + t),
+                                        psi - 2 * (k * s + 0.5 * s^2 * t2),
+                                        ) - LK2 + s * c + s^2 * t3 + 0.5 * t4,
+                                 )
+                              )
+    M(s, t) = Theta(s, t, 0)
+    M0(s, t) = Theta(s, t, 1)
+    dM0da1(s, t) = Theta(s, t, 2)
+    lrhop(s) = (t=0.; @inbounds @simd for i = 1:length(omega)
+                        nu = 1 / (1 - 2 * omega[i] * s)
+                        t += 2 * s * de[i] * nu + 2 * s^2 * de[i] * omega[i] * nu +  omega[i] * nu
+                      end;
+                      t + c
+                )
+    alpha1p(s) = (t=0.; @inbounds @simd for i = 1:length(omega)
+                          nu = 1 / (1 - 2 * omega[i] * s)
+                          t += s * e2[i] * nu + s^2 * e2[i] * omega[i] * nu^2
+                        end;
+                        t + k
+                )
+
+    alpha2p(s) = (t=0.; @inbounds @simd for i = 1:length(omega)
+                          nu = 1 / (1 - 2 * omega[i] * s)
+                          t += s * d2[i] * nu + s^2 * d2[i] * omega[i] * nu^2
+                        end;
+                        t
+                 )
     return M, alpha2p, dM0da1, alpha1p, M0, lrhop
 end
 end
