@@ -77,20 +77,20 @@ function qfmgh(
     qq = x .- kk
     ccdf = similar(float(x))
     pm = similar(float(x))
-    M, alpha2p, dM0da1, alpha1p, M0, lrhop = get_funcs(omega, de[:], e2[:], d2[:], c, k, LK2, lam, chi, psi)
+    lM, alpha2p, ldM0da1, alpha1p, lM0, lrhop = get_funcs(omega, de[:], e2[:], d2[:], c, k, LK2, lam, chi, psi)
     Threads.@threads for i = 1:length(qq)
         q = qq[i]
         if ~do_spa
-            ccdf[i], _ = quadgk(s -> imag(M(1im * s, -1im * s * q) / s), 0.0, Inf)
-            ccdf[i] = M(0, 0) / 2 + rp * ccdf[i]
-            M2(s, t) = M(s, -q * s) * alpha2p(s) + dM0da1(s, -q * s) * alpha1p(s) + M0(s, -q * s) * lrhop(s)
-            pm[i], _ = quadgk(s -> imag(M2(1im * s, -1im * s * q) / s), 0.0, Inf)
-            pm[i] = (M2(0, 0) / 2 + rp * pm[i]) / ccdf[i] + kk
+            ccdf[i], _ = quadgk(s -> imag(exp(lM(1im * s, -1im * s * q)) / s), 0.0, Inf)
+            ccdf[i] = exp(lM(0, 0)) / 2 + rp * ccdf[i]
+            #M2(s, t) = exp(lM(s, -q * s)) * alpha2p(s) + exp(ldM0da1(s, -q * s)) * alpha1p(s) + exp(lM0(s, -q * s)) * lrhop(s)
+            #pm[i], _ = quadgk(s -> imag(M2(1im * s, -1im * s * q) / s), 0.0, Inf)
+            #pm[i] = (M2(0, 0) / 2 + rp * pm[i]) / ccdf[i] + kk
         else
-            ccdf[i] = compute_spa(s -> 1, s -> log(M(s, -q * s)), order)
-            I1 = all(d.==0) ? 0. : compute_spa(alpha2p, s -> log(M(s, -q * s)), order)
-            I2 = all(gam.==0) ? 0. : compute_spa(alpha1p, s -> log(dM0da1(s, -q * s)), order)
-            I3 = compute_spa(lrhop, s -> log(M0(s, -q * s)), order)
+            ccdf[i] = compute_spa(s -> 1, s -> lM(s, -q * s), order)
+            I1 = all(d.==0) ? 0. : compute_spa(alpha2p, s -> lM(s, -q * s), order)
+            I2 = all(gam.==0) ? 0. : compute_spa(alpha1p, s -> ldM0da1(s, -q * s), order)
+            I3 = compute_spa(lrhop, s -> lM0(s, -q * s), order)
             pm[i] = (I1 + I2 + I3) / ccdf[i] + kk
         end
     end
@@ -151,7 +151,7 @@ function compute_spa(g, h, order)
 end
 
 function get_funcs(omega, de, e2, d2, c, k, LK2, lam, chi, psi)
-    @inline Theta(s, t, j) = @fastmath (t1 = 0.; t2 = 0.; t3 = 0.; t4 = 0.;
+    @inline logTheta(s, t, j) = @fastmath (t1 = 0.; t2 = 0.; t3 = 0.; t4 = 0.;
                               @inbounds @simd ivdep for i = 1:length(omega)
                                   nu = 1 / (1 - 2 * omega[i] * s)
                                   t1 += d2[i] * nu
@@ -159,15 +159,14 @@ function get_funcs(omega, de, e2, d2, c, k, LK2, lam, chi, psi)
                                   t3 += de[i] * nu
                                   t4 += log(nu)
                               end;
-                              exp(lklam(lam + j,
+                              lklam(lam + j,
                                         chi - 2 * (0.5 * s^2 * t1 + t),
                                         psi - 2 * (k * s + 0.5 * s^2 * t2),
                                         ) - LK2 + s * c + s^2 * t3 + 0.5 * t4,
-                                 )
-                              )
-    M(s, t) = Theta(s, t, 0)
-    M0(s, t) = Theta(s, t, 1)
-    dM0da1(s, t) = Theta(s, t, 2)
+                                    )
+    lM(s, t) = logTheta(s, t, 0)
+    lM0(s, t) = logTheta(s, t, 1)
+    ldM0da1(s, t) = logTheta(s, t, 2)
     lrhop(s) = @fastmath (t=0.; @inbounds @simd ivdep for i = 1:length(omega)
                         nu = 1 / (1 - 2 * omega[i] * s)
                         t += 2 * s * de[i] * nu + 2 * s^2 * de[i] * omega[i] * nu +  omega[i] * nu
@@ -187,6 +186,6 @@ function get_funcs(omega, de, e2, d2, c, k, LK2, lam, chi, psi)
                         end;
                         t
                  )
-    return M, alpha2p, dM0da1, alpha1p, M0, lrhop
+    return lM, alpha2p, ldM0da1, alpha1p, lM0, lrhop
 end
 end
