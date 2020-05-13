@@ -78,9 +78,9 @@ function qfmgh(
     ccdf = similar(float(x))
     pm = similar(float(x))
     lM, alpha2p, ldM0da1, alpha1p, lM0, lrhop = get_funcs(omega, de[:], e2[:], d2[:], c, k, LK2, lam, chi, psi)
-    shat0 = 0.
-    shat2 = 0.
-    shat3 = 0.
+    shat0 = zeros(Threads.nthreads())
+    shat2 = zeros(Threads.nthreads())
+    shat3 = zeros(Threads.nthreads())
     Threads.@threads for i = 1:length(qq)
         q = qq[i]
         if ~do_spa
@@ -90,10 +90,10 @@ function qfmgh(
             pm[i], _ = quadgk(s -> imag(M2(1im * s, -1im * s * q) / s), 0.0, Inf)
             pm[i] = (M2(0, 0) / 2 + rp * pm[i]) / ccdf[i] + kk
         else
-            ccdf[i], shat0 = compute_spa(s -> 1, s -> lM(s, -q * s), order, shat0)
-            I1 = all(d.==0) ? 0. : compute_spa(alpha2p, s -> lM(s, -q * s), order, shat0, false)[1]
-            I2, shat2 = all(gam.==0) ? (0., shat2) : compute_spa(alpha1p, s -> ldM0da1(s, -q * s), order, shat2)
-            I3, shat3 = compute_spa(lrhop, s -> lM0(s, -q * s), order, shat3)
+            ccdf[i], shat0[Threads.threadid()] = compute_spa(s -> 1, s -> lM(s, -q * s), order, shat0[Threads.threadid()])
+            I1 = all(d.==0) ? 0. : compute_spa(alpha2p, s -> lM(s, -q * s), order, shat0[Threads.threadid()], false)[1]
+            I2, shat2[Threads.threadid()] = all(gam.==0) ? (0., shat2[Threads.threadid()]) : compute_spa(alpha1p, s -> ldM0da1(s, -q * s), order, shat2[Threads.threadid()])
+            I3, shat3[Threads.threadid()] = compute_spa(lrhop, s -> lM0(s, -q * s), order, shat3[Threads.threadid()])
             pm[i] = (I1 + I2 + I3) / ccdf[i] + kk
         end
     end
@@ -131,9 +131,9 @@ function compute_spa(g, h, order, shat=0., solve=true)
         shat = find_zero(hp, shat)
     end
 
-    if abs(h(shat) - h0)<1e-5
+    if abs(h(shat) - h0)<1e-4
         @warn("Saddlepoint approximation is inaccurate; returning NaN.")
-        spa = NaN
+        spa, shat = NaN, 0.
     else
         what = sign(shat) * sqrt(-2 * (h(shat) - h0))
         H = hpp(shat)
