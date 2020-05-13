@@ -151,8 +151,8 @@ function compute_spa(g, h, order)
 end
 
 function get_funcs(omega, de, e2, d2, c, k, LK2, lam, chi, psi)
-    @inline Theta(s, t, j) = (t1 = 0.; t2 = 0.; t3 = 0.; t4 = 0.;
-                              @inbounds @simd for i = 1:length(omega)
+    @inline Theta(s, t, j) = @fastmath (t1 = 0.; t2 = 0.; t3 = 0.; t4 = 0.;
+                              @inbounds @simd ivdep for i = 1:length(omega)
                                   nu = 1 / (1 - 2 * omega[i] * s)
                                   t1 += d2[i] * nu
                                   t2 += e2[i] * nu
@@ -168,20 +168,20 @@ function get_funcs(omega, de, e2, d2, c, k, LK2, lam, chi, psi)
     M(s, t) = Theta(s, t, 0)
     M0(s, t) = Theta(s, t, 1)
     dM0da1(s, t) = Theta(s, t, 2)
-    lrhop(s) = (t=0.; @inbounds @simd for i = 1:length(omega)
+    lrhop(s) = @fastmath (t=0.; @inbounds @simd ivdep for i = 1:length(omega)
                         nu = 1 / (1 - 2 * omega[i] * s)
                         t += 2 * s * de[i] * nu + 2 * s^2 * de[i] * omega[i] * nu +  omega[i] * nu
                       end;
                       t + c
                 )
-    alpha1p(s) = (t=0.; @inbounds @simd for i = 1:length(omega)
+    alpha1p(s) = @fastmath (t=0.; @inbounds @simd ivdep for i = 1:length(omega)
                           nu = 1 / (1 - 2 * omega[i] * s)
                           t += s * e2[i] * nu + s^2 * e2[i] * omega[i] * nu^2
                         end;
                         t + k
                 )
 
-    alpha2p(s) = (t=0.; @inbounds @simd for i = 1:length(omega)
+    alpha2p(s) = @fastmath (t=0.; @inbounds @simd ivdep for i = 1:length(omega)
                           nu = 1 / (1 - 2 * omega[i] * s)
                           t += s * d2[i] * nu + s^2 * d2[i] * omega[i] * nu^2
                         end;
