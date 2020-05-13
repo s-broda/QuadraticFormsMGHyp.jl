@@ -131,7 +131,7 @@ function compute_spa(g, h, order, shat=0., solve=true)
         shat = find_zero(hp, shat)
     end
 
-    if abs(h(shat) - h0)<1e-4
+    if abs(h(shat) - h0) < 1e-5
         @warn("Saddlepoint approximation is inaccurate; returning NaN.")
         spa, shat = NaN, 0.
     else
