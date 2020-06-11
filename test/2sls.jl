@@ -36,27 +36,26 @@ xvec = beta-3:.01:beta+3
 #[pp,ll]=eig(.5*Pz+.5*Pz')
 nx = length(xvec)
 cdf = zeros(length(nuvec), nx)
-cdf2 = similar(cdf)
 pm = similar(cdf)
 spacdf = similar(cdf)
-spacdf2 = similar(cdf)
 spapm =  similar(cdf)
 
 for nuloop=1:length(nuvec)
     nu = nuvec[nuloop]
     for loop = 1 : nx
+        global cdf, spacdf, pm, spapm
         Si = ((nu-2) / nu * [s2u suv; suv s2v])^.5 # rescale to make Si^2 the covariance matrix
         S = kron(Si, R*R')
-        b = xvec[loop] - beta
-        a0 = (-b * (Zp' * Zp))[1]
-        a = [Zp; -2*b*Zp]
-        A = .5*[Pz*0 Pz; Pz -2*b*Pz]
+        local b = xvec[loop] - beta
+        local a0 = (-b * (Zp' * Zp))[1]
+        local a = [Zp; -2*b*Zp]
+        local A = .5*[Pz*0 Pz; Pz -2*b*Pz]
         SAS = S * A * S
         SAS = .5 * (SAS + SAS')
         E = eigen(SAS)
         P = E.vectors
         omega = E.values
-        d = a' * S * P
+        local d = a' * S * P
         ccdf, p = qfmgh(0., a0, a[:], A, S, zeros(2n), zeros(2n), -nu/2, nu, 0., do_spa=false)
         cdf[nuloop, loop] = 1.0 - ccdf
         pm[nuloop, loop] = p
