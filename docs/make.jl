@@ -1,12 +1,11 @@
-using Documenter, QuadraticFormsMGHyp
-
+using Documenter, QuadraticFormsMGHyp, DocThemeIndigo
+indigo = DocThemeIndigo.install(QuadraticFormsMGHyp)
 makedocs(;
     modules=[QuadraticFormsMGHyp],
-    format=Documenter.HTML(),
+    format=Documenter.HTML(assets=String[indigo]),
     pages=[
         "Home" => "index.md",
     ],
-    repo="https://github.com/s-broda/QuadraticFormsMGHyp.jl/blob/{commit}{path}#L{line}",
     sitename="QuadraticFormsMGHyp.jl",
     authors="Simon Broda",
 )
