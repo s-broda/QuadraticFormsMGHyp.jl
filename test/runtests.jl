@@ -1,5 +1,6 @@
 using Test
 using Plots
+using LaTeXStrings
 
 @testset "2sls" begin
     include("2sls.jl")
@@ -24,8 +25,8 @@ end
         labels="",
         ls=:dash,
         title="Exact (solid) and approximate (dashes) distributions",
-        xlabel="\$x\$",
-        ylabel="\$\\mathrm{pr}(\\hat{\\beta}_{2SLS}< x)\$"
+        xlabel=L"$x$",
+        ylabel=L"\mathrm{pr}(\hat{\beta}_{2SLS})< x)"
         )
     p2 = plot(ccdf, pm, labels="", lw=1.25)
     plot!(ccdfspa,
@@ -33,8 +34,8 @@ end
         ls=:dash,
         lw=1.25,
         labels="",
-        xlabel="VaR level \$\\alpha\$",
-        ylabel="\$ES_L^{(\\alpha)}\$",
+        xlabel=L"VaR level $\alpha$",
+        ylabel=L"ES_L^{(\alpha)}",
         title="Exact (solid) and approximate (dashes) expected shortfall"
         )
 

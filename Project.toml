@@ -21,6 +21,7 @@ julia = "1"
 
 [extras]
 FinancialToolbox = "2edd74a5-e968-5e45-af77-76d29aa6a478"
+LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 PGFPlotsX = "8314cec4-20b6-5062-9cdb-752b83310925"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -28,4 +29,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 ToeplitzMatrices = "c751599d-da0a-543b-9d20-d0a503d91d24"
 
 [targets]
-test = ["Test", "Plots", "ToeplitzMatrices", "FinancialToolbox", "Random", "PGFPlotsX"]
+test = ["Test", "Plots", "ToeplitzMatrices", "FinancialToolbox", "Random", "PGFPlotsX", "LaTeXStrings"]
