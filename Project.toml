@@ -1,7 +1,7 @@
 name = "QuadraticFormsMGHyp"
 uuid = "6511778d-1a85-47c0-a398-81d74574b378"
 authors = ["Simon Broda"]
-version = "0.5.1"
+version = "1.0.0"
 
 [deps]
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
@@ -15,7 +15,7 @@ StatsFuns = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
 ForwardDiff = "0.10"
 QuadGK = "2.3"
 Roots = "0.8, 1.0"
-SpecialFunctions = "0.8, 0.9, 0.10, 1.0"
+SpecialFunctions = "0.8, 0.9, 0.10, 1.0, 2.0"
 StatsFuns = "0.9.4"
 julia = "1"
 
