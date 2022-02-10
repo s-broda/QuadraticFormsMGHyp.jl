@@ -25,7 +25,7 @@ and ``K_\lambda(z)`` is the modified Bessel function of the second kind of order
 The generalized hyperbolic distribution contains as special cases, among others, the Variance-Gamma (``\lambda>0``), Student's ``t`` (``\lambda=-\nu/2, \chi=\nu, \psi=0``), Normal Inverse Gaussian (``\lambda=-1/2``), and Hyperbolic (``\lambda=1``) distributions.
 
 ## Installation
-`QuadraticFormsMGHyp` is a registered Julia package. It can be installed with `using Pkg; Pkg.add("QuadraticFormsMGHyp")`. Figure 1 in the paper can be reproduced with `using Pkg; Pkg.test("QuadraticFormsMGHyp")`.
+`QuadraticFormsMGHyp` is a registered Julia package. It can be installed with `using Pkg; Pkg.add("QuadraticFormsMGHyp")`. Figure 1 in the paper, reproduced in the logo above, can be generated with `using Pkg; Pkg.test("QuadraticFormsMGHyp")`.
 
 ## Usage
 The package exports a single function, [`qfmgh`](@ref). Its signature is
