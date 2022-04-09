@@ -14,7 +14,7 @@ StatsFuns = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
 [compat]
 ForwardDiff = "0.10"
 QuadGK = "2.3"
-Roots = "0.8, 1.0"
+Roots = "0.8, 1.0, 2"
 SpecialFunctions = "0.8, 0.9, 0.10, 1.0, 2.0"
 StatsFuns = "0.9.4"
 julia = "1"
