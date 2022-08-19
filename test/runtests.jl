@@ -16,7 +16,7 @@ end
 @static if ~haskey(ENV, "CI")
     pgfplotsx()
     spacdf[abs.(cdf .- spacdf) .> .1] .= NaN # filter errors due to singularity around the mean
-    p1 = plot(xvec, cdf', color=collect(1:length(nuvec))', lw=1.25, legend=:topleft, labels=permutedims("\$\\nu =".*string.(nuvec).*"\$"))
+    p1 = plot(xvec, cdf', color=collect(1:length(nuvec))', lw=1.25, legend=:topleft, labels=permutedims("\\nu =".*string.(nuvec).*""))
     plot!(
         xvec,
         spacdf',
