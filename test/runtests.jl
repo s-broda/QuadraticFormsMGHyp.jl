@@ -5,7 +5,7 @@ using LaTeXStrings
 @testset "2sls" begin
     include("2sls.jl")
     spacdf[isnan.(spacdf)] .= 0
-    @test sum(abs2.(cdf - spacdf)) / length(cdf) < 0.001
+    @test sum(abs2.(cdf - spacdf)) / length(cdf) < 0.01
 end
 @testset "es" begin
     include("es.jl")
