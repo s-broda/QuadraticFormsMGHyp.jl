@@ -31,7 +31,7 @@ nuvec = [3, 9]
 
 Zp = Z * Pi
 Pz = Z * inv(Z' * Z) * Z'
-xvec = beta-3:.01:beta+3
+xvec = beta-3:.1:beta+3
 #E = eigen(.5*Pz+.5*Pz')
 #[pp,ll]=eig(.5*Pz+.5*Pz')
 nx = length(xvec)
@@ -42,7 +42,7 @@ spapm =  similar(cdf)
 
 for nuloop=1:length(nuvec)
     nu = nuvec[nuloop]
-    for loop = 1 : nx
+    for loop = 1 : nx        
         global cdf, spacdf, pm, spapm
         Si = ((nu-2) / nu * [s2u suv; suv s2v])^.5 # rescale to make Si^2 the covariance matrix
         S = kron(Si, R*R')

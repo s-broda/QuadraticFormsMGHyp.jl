@@ -5,6 +5,7 @@ using Roots
 using SpecialFunctions: besselk #, lgamma
 using QuadGK: quadgk
 using StatsFuns: normcdf, normpdf, logtwo
+using PrecompileTools
 # work around https://github.com/JuliaMath/SpecialFunctions.jl/issues/186
 # until https://github.com/JuliaDiff/ForwardDiff.jl/pull/419/ is merged
 using Base.Math: libm
@@ -194,4 +195,11 @@ function get_funcs(omega, de, e2, d2, c, k, LK2, lam, chi, psi)
                  )
     return lM, alpha2p, ldM0da1, alpha1p, lM0, lrhop
 end
-end
+
+@static if VERSION >= v"1.9.0-alpha1"
+	@compile_workload begin
+		ccdf, pm = qfmgh(5.991, 0., zeros(2), [1.0 0.; 0. 1.], [1. 0.; 0. 1.], zeros(2), zeros(2), -10/2, 10, 0., do_spa=false)
+        ccdf, pm = qfmgh(5.991, 0., zeros(2), [1.0 0.; 0. 1.], [1. 0.; 0. 1.], zeros(2), zeros(2), -10/2, 10, 0., do_spa=true)
+	end # precompile block
+end # if
+end # module
