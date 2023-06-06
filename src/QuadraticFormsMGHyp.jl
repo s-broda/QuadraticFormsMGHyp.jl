@@ -169,7 +169,7 @@ function get_funcs(omega, de, e2, d2, c, k, LK2, lam, chi, psi)
                               lklam(lam + j,
                                         chi - 2 * (0.5 * s^2 * t1 + t),
                                         psi - 2 * (k * s + 0.5 * s^2 * t2),
-                                        ) - LK2 + s * c + s^2 * t3 + 0.5 * t4,
+                                        ) - LK2 + s * c + s^2 * t3 + 0.5 * t4
                                     )
     lM(s, t) = logTheta(s, t, 0)
     lM0(s, t) = logTheta(s, t, 1)
