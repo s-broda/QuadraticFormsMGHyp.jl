@@ -1,7 +1,7 @@
 name = "QuadraticFormsMGHyp"
 uuid = "6511778d-1a85-47c0-a398-81d74574b378"
 authors = ["Simon Broda"]
-version = "1.1.1"
+version = "1.1.2"
 
 [deps]
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
