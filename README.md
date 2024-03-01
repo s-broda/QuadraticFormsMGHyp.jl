@@ -2,8 +2,7 @@
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://s-broda.github.io/QuadraticFormsMGHyp.jl/stable)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://s-broda.github.io/QuadraticFormsMGHyp.jl/dev)
-[![Build status (Linux, MacOS)](https://github.com/s-broda/QuadraticFormsMGHyp.jl/workflows/CI/badge.svg)](https://github.com/s-broda/QuadraticFormsMGHyp.jl/actions?query=workflow%3ACI)
-[![Build Status (Windows)](https://ci.appveyor.com/api/projects/status/github/s-broda/QuadraticFormsMGHyp.jl?svg=true)](https://ci.appveyor.com/project/s-broda/QuadraticFormsMGHyp-jl)
+[![Build status (Linux, MacOS, Windows)](https://github.com/s-broda/QuadraticFormsMGHyp.jl/workflows/CI/badge.svg)](https://github.com/s-broda/QuadraticFormsMGHyp.jl/actions?query=workflow%3ACI)
 [![Codecov](https://codecov.io/gh/s-broda/QuadraticFormsMGHyp.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/s-broda/QuadraticFormsMGHyp.jl)
 [![pkgeval](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/Q/QuadraticFormsMGHyp.svg)](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/Q/QuadraticFormsMGHyp.html)
 [![DOI](https://zenodo.org/badge/244015145.svg)](https://zenodo.org/badge/latestdoi/244015145)

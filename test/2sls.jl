@@ -19,7 +19,7 @@ else
      bb = 1 / sqrt(1-alpha^2)
 end
 R = Toeplitz(alpha .^(0:n-1), vcat(1., zeros(n-1))) * I
-R[:, 1] = bb * R[:, 1]
+R = R * diagm(vcat(bb, ones(n-1)))
 R = R ./ sqrt(tr(R * R') / n)
 mu = .5
 Pi = sqrt(mu / k) * (Z' * Z)^(-.5) * ones(k, 1)
@@ -42,7 +42,7 @@ spapm =  similar(cdf)
 
 for nuloop=1:length(nuvec)
     nu = nuvec[nuloop]
-    for loop = 1 : nx        
+    for loop = 1 : nx
         global cdf, spacdf, pm, spapm
         Si = ((nu-2) / nu * [s2u suv; suv s2v])^.5 # rescale to make Si^2 the covariance matrix
         S = kron(Si, R*R')
