@@ -2,6 +2,9 @@ using Test
 using Plots
 using LaTeXStrings
 
+@testset "quadrature" begin
+    include("quadrature.jl")
+end
 @testset "2sls" begin
     include("2sls.jl")
     spacdf[isnan.(spacdf)] .= 0

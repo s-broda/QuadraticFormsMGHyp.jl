@@ -2,8 +2,7 @@ module QuadraticFormsMGHyp
 
 using LinearAlgebra
 using Roots
-using SpecialFunctions: besselk #, lgamma
-using QuadGK: quadgk
+using SpecialFunctions: besselk, besselkx #, lgamma
 using StatsFuns: normcdf, normpdf, logtwo
 using PrecompileTools
 # work around https://github.com/JuliaMath/SpecialFunctions.jl/issues/186
@@ -35,6 +34,8 @@ Keyword arguments:
     `do_spa`: whether to return the exact result or a saddlepoint approximation
     `order`: order of the saddlepoint approximation
 
+The exact result is a mapped Gauss–Legendre rule. Lists of more than 24 thresholds are reduced to a Chebyshev series.
+
  (c) 2020 S.A. Broda
 """
 function qfmgh end
@@ -57,6 +58,9 @@ function qfmgh(
 )
     if (do_spa && (lam>=0 || chi<= 0 ||  any(gam .!= 0 )))
         @warn "Saddlepoint approximation is inaccurate with these parameters."
+    end
+    if !do_spa
+        return quadrature_eval(x, a0, a, A, C, mu, gam, lam, chi, psi)
     end
 
     CAC = Symmetric(C' * A * C)
@@ -86,15 +90,7 @@ function qfmgh(
             task_local_storage(:shat3, 0.)
         end
         q = qq[i]
-        
-        if ~do_spa
-            ccdf[i], _ = quadgk(s -> imag(exp(lM(1im * s, -1im * s * q)) / s), 0.0, Inf)
-            ccdf[i] = exp(lM(0, 0)) / 2 + rp * ccdf[i]
-            M2(s, t) = exp(lM(s, -q * s)) * alpha2p(s) + exp(ldM0da1(s, -q * s)) * alpha1p(s) + exp(lM0(s, -q * s)) * lrhop(s)
-            pm[i], _ = quadgk(s -> imag(M2(1im * s, -1im * s * q) / s), 0.0, Inf)
-            pm[i] = (M2(0, 0) / 2 + rp * pm[i]) / ccdf[i] + kk
-        else
-            ccdf[i], shat0 = compute_spa(s -> 1, s -> lM(s, -q * s), order, task_local_storage(:shat0))
+        ccdf[i], shat0 = compute_spa(s -> 1, s -> lM(s, -q * s), order, task_local_storage(:shat0))
             task_local_storage(:shat0, shat0)
             I1 = all(d.==0) ? 0. : compute_spa(alpha2p, s -> lM(s, -q * s), order, task_local_storage(:shat0), false)[1]
             I2, shat2 = all(gam.==0) ? (0., task_local_storage(:shat2)) : compute_spa(alpha1p, s -> ldM0da1(s, -q * s), order, task_local_storage(:shat2))
@@ -102,8 +98,6 @@ function qfmgh(
             I3, shat3 = compute_spa(lrhop, s -> lM0(s, -q * s), order, task_local_storage(:shat3))
             task_local_storage(:shat3, shat3)
             pm[i] = (I1 + I2 + I3) / ccdf[i] + kk
-           
-        end
     end
     return ccdf, pm
 end
@@ -203,9 +197,12 @@ function get_funcs(omega, de, e2, d2, c, k, LK2, lam, chi, psi)
     return lM, alpha2p, ldM0da1, alpha1p, lM0, lrhop
 end
 
+include("quadrature.jl")
+
 @static if VERSION >= v"1.9.0-alpha1"
 	@compile_workload begin
 		ccdf, pm = qfmgh(5.991, 0., zeros(2), [1.0 0.; 0. 1.], [1. 0.; 0. 1.], zeros(2), zeros(2), -10/2, 10, 0., do_spa=false)
+        ccdf, pm = qfmgh(range(3.5, 17.5; length=32), 0., zeros(10), 0.5I(10), Matrix{Float64}(I, 10, 10), zeros(10), zeros(10), -0.5, 1.0, 1.0)
         ccdf, pm = qfmgh(5.991, 0., zeros(2), [1.0 0.; 0. 1.], [1. 0.; 0. 1.], zeros(2), zeros(2), -10/2, 10, 0., do_spa=true)
 	end # precompile block
 end # if
