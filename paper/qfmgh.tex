@@ -16,11 +16,11 @@
 \Abstract{
 \pkg{QuadraticFormsMGHyp.jl} evaluates the survival function and the expected shortfall of a quadratic form in a multivariate generalized hyperbolic vector.
 The expressions are the Gil-Pelaez integrals derived by \citet{bz:21}.
-Version 1.5 of the package replaces an adaptive quadrature, which recomputed a complex Bessel function at every sample of every threshold, with a mapped Gauss--Legendre rule.
+Version 2.0 of the package replaces an adaptive quadrature, which recomputed a complex Bessel function at every sample of every threshold, with a mapped Gauss--Legendre rule.
 The nodes do not depend on the threshold.
 The normal-inverse-Gaussian case and the boundary case $\psi=0$ use closed forms, and a list of thresholds is reduced to a Chebyshev series whose degree grows until the last coefficient is negligible.
 On a ten-dimensional normal-inverse-Gaussian form with 1{,}401 thresholds, one thread of version 1.4 takes 1.426 seconds after warmup.
-The same call in version 1.5 takes 0.124 milliseconds.
+The same call in version 2.0 takes 0.124 milliseconds.
 A C implementation of the same node rule takes 0.076 milliseconds.
 }
 
@@ -50,7 +50,7 @@ On the ten-dimensional normal-inverse-Gaussian example of Section \ref{sec:time}
 The same numbers come out of a fixed 32-point rule in a fraction of a millisecond, because the expensive part of the integrand does not depend on the threshold and, for this parameter value, the Bessel factor is elementary.
 A \proglang{C} library already evaluates that rule.
 The \proglang{Julia} code is compiled as well, so after the first call it can do the same work.
-Version 1.5 is that port.
+Version 2.0 is that port.
 The public function is unchanged: \code{qfmgh} still returns the survival probability $\Pr(L>x)$ and the conditional expected shortfall $\mathrm{E}[L\mid L>x]$.
 
 \section{The integral} \label{sec:integral}
@@ -106,7 +106,7 @@ One cancellation is worth making explicit.
 The anchor $M_2(0)$ multiplies $\mathrm{E}[W^2]$ by the skewness coefficient of the quadratic form.
 For an integer $\lambda\le -1$ and $\psi=0$ that moment is infinite.
 If the coefficient is exactly zero the product is zero, and forming $\exp(\ell_{\lambda+2})\cdot 0$ produces a \texttt{NaN}.
-Version 1.5 drops the product before the exponential when the coefficient vanishes.
+Version 2.0 drops the product before the exponential when the coefficient vanishes.
 A single threshold of the \proglang{C} library returns a finite survival probability and a \texttt{NaN} shortfall on that input.
 The \proglang{Julia} shortfall stays finite.
 The two survival probabilities agree.
@@ -182,7 +182,7 @@ $\lambda=-1.3$, $\chi=2$, $\psi=1.1$ & $1,\,8,\,20$ & $4.0\times 10^{-9}$ & $7.8
 
 The second comparison is against the \proglang{C} implementation of the same node rule, called through the \pkg{QuadraticFormsMGHyp} extension for \proglang{Python}.
 With both implementations on a Chebyshev grid of degree 16, the 1{,}401 normal-inverse-Gaussian survival values differ by at most $6\times 10^{-16}$.
-Version 1.5 stops at degree 20 rather than 16.
+Version 2.0 stops at degree 20 rather than 16.
 Its test suite therefore compares a long grid with the direct rule at the endpoints and at the middle of the grid, and requires absolute agreement to $10^{-8}$.
 A single normal-inverse-Gaussian threshold agrees with the \proglang{C} value to a unit in the last place.
 The same holds for a half-integer order, a generic order, an integer order with $\psi>0$, and the diagonal option portfolio used by \citet{bz:21}, all evaluated at one threshold.
@@ -201,14 +201,14 @@ The machine is an Apple M4 with 10 logical CPUs and 16 GB of RAM, running macOS 
 The column headed ``10 threads'' was started with \code{-t 10}.
 The \proglang{C} times are from \proglang{Python} 3.9.6 calling the extension and include construction of the \code{QuadraticForm} object.
 The \proglang{Julia} column headed 1.4 is version 1.4.0 of this package, which is the adaptive integrator.
-Version 1.5 is the code described here, on \proglang{Julia} 1.11.7.
+Version 2.0 is the code described here, on \proglang{Julia} 1.11.7.
 
 \begin{table}[ht]
 \centering
 \footnotesize
 \begin{tabular}{lrrrrr}
 \toprule
-& \multicolumn{2}{c}{Version 1.4} & \multicolumn{2}{c}{Version 1.5} & \\
+& \multicolumn{2}{c}{Version 1.4} & \multicolumn{2}{c}{Version 2.0} & \\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}
 Problem & 1 thread & 4 threads & 1 thread & 10 threads & \proglang{C} \\
 \midrule
@@ -226,9 +226,9 @@ Blank cells were not timed.}
 \end{table}
 
 One thread of version 1.4 spends 1.426 seconds on the long normal-inverse-Gaussian grid.
-Version 1.5 spends 0.124 milliseconds, a factor of $1.15\times 10^{4}$.
+Version 2.0 spends 0.124 milliseconds, a factor of $1.15\times 10^{4}$.
 Four threads bring version 1.4 down to 0.503 seconds.
-The normal-inverse-Gaussian path in version 1.5 does not use those threads, and the timing does not move.
+The normal-inverse-Gaussian path in version 2.0 does not use those threads, and the timing does not move.
 The \proglang{C} library takes 0.076 milliseconds on the same grid, so the \proglang{Julia} call is slower by a factor of about 1.6.
 On a single threshold the order reverses: 0.033 milliseconds in \proglang{Julia} and 0.040 milliseconds in \proglang{C}.
 The remaining gap on the long grid is allocation around a 20-point expansion, not the quadrature.
@@ -239,7 +239,7 @@ The \proglang{C} call takes 0.087 milliseconds.
 Both are far from the adaptive integrator: a single normal-inverse-Gaussian threshold already costs version 1.4 0.73 milliseconds, and a generic order evaluates several Bessel functions per node.
 
 The same pattern holds for the diagonal option portfolio of \citet{bz:21}, which is normal-inverse-Gaussian.
-Version 1.5 takes 0.137 milliseconds for the 1{,}401 thresholds from 3.5 to 17.5, and the \proglang{C} library takes 0.076 milliseconds.
+Version 2.0 takes 0.137 milliseconds for the 1{,}401 thresholds from 3.5 to 17.5, and the \proglang{C} library takes 0.076 milliseconds.
 A ten-dimensional Student-$t$ form with $\lambda=-5/2$, $\chi=5$ and $\psi=0$, on 1{,}401 thresholds from 2 to 30, takes 0.404 milliseconds.
 The Chebyshev series settles, so this is not the direct fallback.
 
@@ -247,18 +247,18 @@ The Chebyshev series settles, so this is not the direct fallback.
 
 The tail probability and the expected shortfall of a quadratic form in a multivariate generalized hyperbolic vector are one-dimensional integrals.
 Once the eigenvalues are known, a mapped Gauss--Legendre rule with a few dozen nodes evaluates both, and a Chebyshev series extends that evaluation to a long grid of thresholds.
-\pkg{QuadraticFormsMGHyp.jl} 1.5 is that calculation in \proglang{Julia}.
+\pkg{QuadraticFormsMGHyp.jl} 2.0 is that calculation in \proglang{Julia}.
 After warmup it is within a factor of two of a \proglang{C} implementation of the same rule on the normal-inverse-Gaussian benchmark, and four orders of magnitude faster than the adaptive integrator it replaces.
 The saddlepoint approximation of \citet{bz:21} is still available for the calls that ask for it.
 
 \section*{Computational details}
 
 Timings were taken on an Apple M4 with 10 logical CPUs and 16 GB of RAM, under macOS 26.5.
-\pkg{QuadraticFormsMGHyp.jl} 1.4.0 and 1.5.0 ran on \proglang{Julia} 1.11.7.
+\pkg{QuadraticFormsMGHyp.jl} 1.4.0 and 2.0.0 ran on \proglang{Julia} 1.11.7.
 The \proglang{C} comparison used the \pkg{QuadraticFormsMGHyp} extension for \proglang{Python}, imported from \proglang{Python} 3.9.6.
 Each reported time is the minimum of repeated calls after one discarded warmup.
 Version 1.4 was timed twice on the long grid and five times on the single threshold.
-Version 1.5 was timed 200 times on the normal-inverse-Gaussian rows and 50 times on the others.
+Version 2.0 was timed 200 times on the normal-inverse-Gaussian rows and 50 times on the others.
 The \proglang{Python} rows are the minimum of 30 calls.
 No time includes compilation or process startup.
 
