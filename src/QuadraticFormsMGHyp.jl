@@ -4,7 +4,7 @@ using LinearAlgebra
 using Roots
 using SpecialFunctions: besselk, besselkx #, lgamma
 using StatsFuns: normcdf, normpdf, logtwo
-using PrecompileTools
+using PrecompileTools: @compile_workload
 # work around https://github.com/JuliaMath/SpecialFunctions.jl/issues/186
 # until https://github.com/JuliaDiff/ForwardDiff.jl/pull/419/ is merged
 using Base.Math: libm
@@ -202,11 +202,28 @@ end
 include("quadrature.jl")
 
 @static if VERSION >= v"1.9.0-alpha1"
-	@compile_workload begin
-		ccdf, pm = qfmgh(5.991, 0., zeros(2), [1.0 0.; 0. 1.], [1. 0.; 0. 1.], zeros(2), zeros(2), -10/2, 10, 0., do_spa=false)
-        ccdf, pm = qfmgh(range(3.5, 17.5; length=32), 0., zeros(10), 0.5I(10), Matrix{Float64}(I, 10, 10), zeros(10), zeros(10), -0.5, 1.0, 1.0)
-        ccdf, pm = qfmgh(1.0, 0., [1.0], zeros(1, 1), ones(1, 1), zeros(1), zeros(1), 0.0, Inf, Inf)
-        ccdf, pm = qfmgh(5.991, 0., zeros(2), [1.0 0.; 0. 1.], [1. 0.; 0. 1.], zeros(2), zeros(2), -10/2, 10, 0., do_spa=true)
-	end # precompile block
+    # One cheap call per compiled body, inlined so each specialization is a
+    # precompile root. A `let` or a non-constant global hides that root.
+    # Tails that climb toward 4096 nodes use the same methods and are omitted.
+    @compile_workload begin
+        # NIG, direct and Chebyshev. A is Diagonal, as in the documented example.
+        qfmgh(5.0, 0.0, zeros(10), 0.5I(10), Matrix{Float64}(I, 10, 10), zeros(10), zeros(10), -0.5, 1.0, 1.0)
+        qfmgh(range(3.5, 17.5; length=32), 0.0, zeros(10), 0.5I(10), Matrix{Float64}(I, 10, 10), zeros(10), zeros(10), -0.5, 1.0, 1.0)
+        # ψ = 0 closed form, half-integer Bessel, generic Bessel.
+        qfmgh(5.991, 0.0, zeros(2), [1.0 0.0; 0.0 1.0], [1.0 0.0; 0.0 1.0], zeros(2), zeros(2), -5.0, 10.0, 0.0)
+        qfmgh(1.0, 0.0, zeros(2), [1.0 0.0; 0.0 1.0], [1.0 0.0; 0.0 1.0], zeros(2), zeros(2), -1.5, 2.0, 1.5)
+        qfmgh(1.0, 0.0, zeros(2), [1.0 0.0; 0.0 1.0], [1.0 0.0; 0.0 1.0], zeros(2), zeros(2), -1.3, 2.0, 1.1)
+        # Gaussian: mapped linear, low-rank panels, and the constant atom.
+        qfmgh(1.0, 0.0, [1.0], zeros(1, 1), ones(1, 1), zeros(1), zeros(1), 0.0, Inf, Inf)
+        qfmgh(10.0, 0.0, zeros(1), ones(1, 1), ones(1, 1), zeros(1), zeros(1), 0.0, Inf, Inf)
+        qfmgh(0.0, 0.0, zeros(1), ones(1, 1), ones(1, 1), zeros(1), zeros(1), 0.0, Inf, Inf)
+        qfmgh([-1.0, 1.0], 0.0, zeros(1), zeros(1, 1), ones(1, 1), zeros(1), zeros(1), 0.0, Inf, Inf)
+        # Saddlepoint. These parameters do not trip the inaccuracy warning.
+        qfmgh(5.991, 0.0, zeros(2), [1.0 0.0; 0.0 1.0], [1.0 0.0; 0.0 1.0], zeros(2), zeros(2), -5.0, 10.0, 0.0; do_spa=true)
+        # Integer scalars. `qfmgh(1, 0, …, -1, 2, 1)` and an integer threshold
+        # with otherwise floating arguments are separate specializations.
+        qfmgh(1, 0, zeros(2), [1.0 0.0; 0.0 1.0], [1.0 0.0; 0.0 1.0], zeros(2), zeros(2), -1, 2, 1)
+        qfmgh(1, 0.0, zeros(2), [1.0 0.0; 0.0 1.0], [1.0 0.0; 0.0 1.0], zeros(2), zeros(2), -1.5, 2.0, 1.5)
+    end
 end # if
 end # module
