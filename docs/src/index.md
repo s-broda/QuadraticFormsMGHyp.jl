@@ -35,7 +35,7 @@ qfmgh(x, a0, a, A, C, mu, gam, lam, chi, psi; do_spa=false, order=2)
 ```
 The first argument, `x`, can be passed as either a scalar or a vector. The latter is more efficient than the more Julian way of calling `qfmgh.(xvec, ...)`, because certain parts of the computation, such as calculating the eigenvalues of ``A``, can be hoisted out of the loop over `xvec`.
 
-The keyword argument `do_spa` controls whether an exact result or a saddlepoint approximation is computed. The order of the latter is controlled with the second keyword argument, `order`, which can be either 1 or 2. The exact result is a mapped Gauss–Legendre quadrature. On a long grid the thresholds are reduced to a Chebyshev series whose degree is raised until the last coefficient is small.
+The keyword argument `do_spa` controls whether an exact result or a saddlepoint approximation is computed. The order of the latter is controlled with the second keyword argument, `order`, which can be either 1 or 2. The exact result is a mapped Gauss–Legendre quadrature whose node count doubles until successive refinements agree to a relative tolerance of 1e-7, up to 4096 nodes. On a long grid the thresholds are reduced to a Chebyshev series whose degree is raised until the last coefficient is small.
 
 The function returns a tuple containing (vectors of) the tail probability ``\mathbb{P}[L>x]``, and the tail conditional mean ``\mathbb{E}[L\mid L>x ]``.
 

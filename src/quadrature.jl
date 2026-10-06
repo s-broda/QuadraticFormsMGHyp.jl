@@ -1,5 +1,7 @@
 # Mapped Gauss–Legendre evaluation of the Gil-Pelaez integral.
-# The node counts, the truncation, and the Chebyshev grid match es4mgh.c.
+# The node count starts at the law's default and doubles until successive
+# refinements agree to relative tolerance 1e-7, or until 4096 nodes.
+# The truncation and the Chebyshev growth match es4mgh.c.
 
 const KIND_GENERAL = 0
 const KIND_NIG = 1
@@ -7,6 +9,8 @@ const KIND_HALF = 2
 const KIND_PSI0 = 3
 const IM = ComplexF64(0.0, 1.0)
 const LOG2F = log(2.0)
+const REL_QUAD = 1e-7
+const NNODE_CAP = 4096
 
 struct Prepared
     kind::Int
@@ -25,6 +29,30 @@ struct Prepared
     a1p::Vector{ComplexF64}
     lrp::Vector{ComplexF64}
     log_psi::Vector{ComplexF64}
+end
+
+# Spectral reduction, reused while the node count is doubled.
+# nlo is the coarse order that agreed with its refinement.
+mutable struct Layout
+    kind::Int
+    kk::Float64
+    lam::Float64
+    chi::Float64
+    psi::Float64
+    LK2::Float64
+    M20::Float64
+    need_a1::Bool
+    ccoef::Float64
+    k::Float64
+    D2z::Float64
+    E2z::Float64
+    DEz::Float64
+    ub::Float64
+    omega::Vector{Float64}
+    d2::Vector{Float64}
+    e2::Vector{Float64}
+    de::Vector{Float64}
+    nlo::Int
 end
 
 function legendre_pd(n::Int, x::Float64)
@@ -209,8 +237,20 @@ function prepare_spectral(omega_all, d_all, e_all, ccoef, k, kk, lam, chi, psi)
     if kind == KIND_PSI0 && need_a1
         kind = half_order(lam) ? KIND_HALF : KIND_GENERAL
     end
-    nn = default_nnode(kind)
     ub = integration_ub(omega_all)
+    lm1 = lklam_real_f(lam + 1.0, chi, psi) - LK2
+    lm2 = lklam_real_f(lam + 2.0, chi, psi) - LK2
+    sum_om = isempty(omega_all) ? 0.0 : sum(omega_all)
+    # The skewness term carries E[W^2]. When that coefficient is zero the
+    # product is zero even if the moment is infinite (integer λ, ψ = 0).
+    skew = k == 0.0 ? 0.0 : real(exp(lm2) * k)
+    M20 = skew + real(exp(lm1) * (ccoef + sum_om))
+    return Layout(kind, Float64(kk), Float64(lam), Float64(chi), Float64(psi),
+                  LK2, M20, need_a1, Float64(ccoef), Float64(k),
+                  D2z, E2z, DEz, ub, omega, d2, e2, de, 0)
+end
+
+function materialize(L::Layout, nn::Int)
     gx, gw = gauss_legendre(nn)
     u = Vector{Float64}(undef, nn)
     wo = Vector{Float64}(undef, nn)
@@ -221,6 +261,8 @@ function prepare_spectral(omega_all, d_all, e_all, ccoef, k, kk, lam, chi, psi)
     a1pv = Vector{ComplexF64}(undef, nn)
     lrp = Vector{ComplexF64}(undef, nn)
     log_psi = Vector{ComplexF64}(undef, nn)
+    ne = length(L.omega)
+    ub = L.ub
     @inbounds for i = 1:nn
         v = 0.5 * ub * (gx[i] + 1.0)
         wv = 0.5 * ub * gw[i]
@@ -239,26 +281,26 @@ function prepare_spectral(omega_all, d_all, e_all, ccoef, k, kk, lam, chi, psi)
         a1p = zero(ComplexF64)
         lr = zero(ComplexF64)
         for j = 1:ne
-            nu = 1.0 / (1.0 - 2.0 * omega[j] * s)
+            nu = 1.0 / (1.0 - 2.0 * L.omega[j] * s)
             nu2 = nu * nu
-            t1 += d2[j] * nu
-            t2 += e2[j] * nu
-            t3 += de[j] * nu
+            t1 += L.d2[j] * nu
+            t2 += L.e2[j] * nu
+            t3 += L.de[j] * nu
             t4 += log(nu)
-            a2p += s * d2[j] * nu + s2 * d2[j] * omega[j] * nu2
-            a1p += s * e2[j] * nu + s2 * e2[j] * omega[j] * nu2
-            lr += 2.0 * s * de[j] * nu + 2.0 * s2 * de[j] * omega[j] * nu2 + omega[j] * nu
+            a2p += s * L.d2[j] * nu + s2 * L.d2[j] * L.omega[j] * nu2
+            a1p += s * L.e2[j] * nu + s2 * L.e2[j] * L.omega[j] * nu2
+            lr += 2.0 * s * L.de[j] * nu + 2.0 * s2 * L.de[j] * L.omega[j] * nu2 + L.omega[j] * nu
         end
-        t1 += D2z
-        t2 += E2z
-        t3 += DEz
-        a2p += s * D2z
-        a1p += s * E2z + k
-        lr += 2.0 * s * DEz + ccoef
-        chi_base[i] = chi - s2 * t1
-        pnode = psi - 2.0 * (k * s + 0.5 * s2 * t2)
+        t1 += L.D2z
+        t2 += L.E2z
+        t3 += L.DEz
+        a2p += s * L.D2z
+        a1p += s * L.E2z + L.k
+        lr += 2.0 * s * L.DEz + L.ccoef
+        chi_base[i] = L.chi - s2 * t1
+        pnode = L.psi - 2.0 * (L.k * s + 0.5 * s2 * t2)
         psi_node[i] = pnode
-        lrho[i] = s * ccoef + s2 * t3 + 0.5 * t4
+        lrho[i] = s * L.ccoef + s2 * t3 + 0.5 * t4
         a2pv[i] = a2p
         a1pv[i] = a1p
         lrp[i] = lr
@@ -269,14 +311,8 @@ function prepare_spectral(omega_all, d_all, e_all, ccoef, k, kk, lam, chi, psi)
             log_psi[i] = log(pnode)
         end
     end
-    lm1 = lklam_real_f(lam + 1.0, chi, psi) - LK2
-    lm2 = lklam_real_f(lam + 2.0, chi, psi) - LK2
-    sum_om = isempty(omega_all) ? 0.0 : sum(omega_all)
-    # The skewness term carries E[W^2]. When that coefficient is zero the
-    # product is zero even if the moment is infinite (integer λ, ψ = 0).
-    skew = k == 0.0 ? 0.0 : real(exp(lm2) * k)
-    M20 = skew + real(exp(lm1) * (ccoef + sum_om))
-    return Prepared(kind, kk, lam, LK2, M20, need_a1, nn, u, wo, chi_base, psi_node, lrho, a2pv, a1pv, lrp, log_psi)
+    return Prepared(L.kind, L.kk, L.lam, L.LK2, L.M20, L.need_a1, nn,
+                    u, wo, chi_base, psi_node, lrho, a2pv, a1pv, lrp, log_psi)
 end
 
 function finish_tail(E::Prepared, Ic::Float64, Ip::Float64)
@@ -471,11 +507,70 @@ function series_settled(ac, ae, esq)
     return abs(ac[end]) <= 1e-9 && abs(ae[end]) <= 1e-9 * scale
 end
 
-function eval_quad!(E::Prepared, x, ccdf, es)
+function pair_settled(a::Float64, b::Float64)
+    fa = isfinite(a)
+    fb = isfinite(b)
+    if fa && fb
+        m = max(abs(a), abs(b))
+        return abs(a - b) <= REL_QUAD * m
+    end
+    if !fa && !fb
+        return (isnan(a) && isnan(b)) || (isinf(a) && isinf(b) && signbit(a) == signbit(b))
+    end
+    return false
+end
+
+function outputs_settled(a, b)
+    length(a) == length(b) || return false
+    @inbounds for i in eachindex(a, b)
+        pair_settled(a[i], b[i]) || return false
+    end
+    return true
+end
+
+# Compare n nodes with the next refinement on these thresholds.
+# Remember the coarse order that agreed, and return the finer values.
+# At the cap, return the finest table even if the test is still open.
+function certify!(L::Layout, x, ccdf, es)
+    n = length(x)
+    n <= 0 && return nothing
+    nn = L.nlo > 0 ? L.nlo : default_nnode(L.kind)
+    nn > NNODE_CAP && (nn = NNODE_CAP)
+    nn < 1 && (nn = 1)
+    cc_c = Vector{Float64}(undef, n)
+    es_c = Vector{Float64}(undef, n)
+    cc_f = Vector{Float64}(undef, n)
+    es_f = Vector{Float64}(undef, n)
+    eval_direct!(materialize(L, nn), x, cc_c, es_c)
+    while nn < NNODE_CAP
+        n2 = nn * 2
+        n2 > NNODE_CAP && (n2 = NNODE_CAP)
+        eval_direct!(materialize(L, n2), x, cc_f, es_f)
+        if outputs_settled(cc_c, cc_f) && outputs_settled(es_c, es_f)
+            L.nlo = nn
+            copyto!(ccdf, cc_f)
+            copyto!(es, es_f)
+            return nothing
+        end
+        if n2 == NNODE_CAP
+            copyto!(ccdf, cc_f)
+            copyto!(es, es_f)
+            return nothing
+        end
+        cc_c, cc_f = cc_f, cc_c
+        es_c, es_f = es_f, es_c
+        nn = n2
+    end
+    copyto!(ccdf, cc_c)
+    copyto!(es, es_c)
+    return nothing
+end
+
+function eval_quad!(L::Layout, x, ccdf, es)
     n = length(x)
     n <= 0 && return nothing
     if n <= 24
-        eval_direct!(E, x, ccdf, es)
+        certify!(L, x, ccdf, es)
         return nothing
     end
     xmin = xmax = x[1]
@@ -484,16 +579,22 @@ function eval_quad!(E::Prepared, x, ccdf, es)
         x[i] > xmax && (xmax = x[i])
     end
     if xmax - xmin <= 1e-14 * (1.0 + abs(xmax))
-        cc, ee = eval_point(E, x[1] - E.kk)
-        fill!(ccdf, cc)
-        fill!(es, ee)
+        one = Vector{Float64}(undef, 1)
+        one[1] = x[1]
+        cc = Vector{Float64}(undef, 1)
+        ee = Vector{Float64}(undef, 1)
+        certify!(L, one, cc, ee)
+        fill!(ccdf, cc[1])
+        fill!(es, ee[1])
         return nothing
     end
     mid = 0.5 * (xmin + xmax)
     half = 0.5 * (xmax - xmin)
     # A smooth tail is analytic in the threshold, so a short Chebyshev grid
     # reproduces the node rule. A sharp bend is not, and is integrated directly.
-    m = min(cheb_order(E.kind), n)
+    # The node count is certified on the abscissae of this call, and the coarse
+    # order is kept for the next degree so a hard tail is not restarted at 32.
+    m = min(cheb_order(L.kind), n)
     while true
         xq = Vector{Float64}(undef, m)
         @inbounds for j = 1:m
@@ -501,7 +602,7 @@ function eval_quad!(E::Prepared, x, ccdf, es)
         end
         ccq = Vector{Float64}(undef, m)
         esq = Vector{Float64}(undef, m)
-        eval_direct!(E, xq, ccq, esq)
+        certify!(L, xq, ccq, esq)
         ac = Vector{Float64}(undef, m)
         ae = Vector{Float64}(undef, m)
         cheb_coeffs!(ac, ccq)
@@ -512,12 +613,12 @@ function eval_quad!(E::Prepared, x, ccdf, es)
             return nothing
         end
         if m >= n || m >= 96
-            eval_direct!(E, x, ccdf, es)
+            certify!(L, x, ccdf, es)
             return nothing
         end
         nxt = min(n, 96, m + max(8, m ÷ 2))
         if nxt <= m
-            eval_direct!(E, x, ccdf, es)
+            certify!(L, x, ccdf, es)
             return nothing
         end
         m = nxt
@@ -526,9 +627,9 @@ end
 
 function quadrature_eval(x::AbstractVector, a0, a, A, C, mu, gam, lam, chi, psi)
     xv = collect(Float64, x)
-    E = prepare(a0, a, A, C, mu, gam, lam, chi, psi)
+    L = prepare(a0, a, A, C, mu, gam, lam, chi, psi)
     ccdf = similar(xv)
     es = similar(xv)
-    eval_quad!(E, xv, ccdf, es)
+    eval_quad!(L, xv, ccdf, es)
     return ccdf, es
 end

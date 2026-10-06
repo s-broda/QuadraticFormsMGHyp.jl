@@ -34,7 +34,7 @@ Keyword arguments:
     `do_spa`: whether to return the exact result or a saddlepoint approximation
     `order`: order of the saddlepoint approximation
 
-The exact result is a mapped Gauss–Legendre rule. Lists of more than 24 thresholds are reduced to a Chebyshev series.
+The exact result is a mapped Gauss–Legendre rule. The order doubles until successive refinements agree to a relative tolerance of 1e-7, up to 4096 nodes. Lists of more than 24 thresholds are reduced to a Chebyshev series.
 
  (c) 2020 S.A. Broda
 """
@@ -177,7 +177,8 @@ function get_funcs(omega, de, e2, d2, c, k, LK2, lam, chi, psi)
     ldM0da1(s, t) = logTheta(s, t, 2)
     lrhop(s) = @fastmath (t=0.; @inbounds @simd ivdep for i = 1:length(omega)
                         nu = 1 / (1 - 2 * omega[i] * s)
-                        t += 2 * s * de[i] * nu + 2 * s^2 * de[i] * omega[i] * nu +  omega[i] * nu
+                        # ν^2 on the s^2 term, ν on the last term: (log ρ)' / i.
+                        t += 2 * s * de[i] * nu + 2 * s^2 * de[i] * omega[i] * nu * nu + omega[i] * nu
                       end;
                       t + c
                 )

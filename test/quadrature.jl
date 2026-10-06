@@ -1,5 +1,5 @@
-# Values pinned here are from QuadraticFormsMGHyp 0.1.1 (the C kernel),
-# except the psi = 0 shortfall, which that kernel returns as NaN.
+# Values pinned here are the refined mapped rule. A 32-node table is not enough
+# once the mixing density concentrates, and the easy cases move in the 10th digit.
 using LinearAlgebra
 using QuadraticFormsMGHyp
 
@@ -34,8 +34,8 @@ end
     cmid, emid = qfmgh(x[701], 0.0, z, A, C, z, z, -0.5, 1.0, 1.0)
     cend, eend = qfmgh(17.5, 0.0, z, A, C, z, z, -0.5, 1.0, 1.0)
     @test c1 isa Float64
-    @test c1 ≈ 0.45063991441010837 atol = ATOL
-    @test e1 ≈ 8.90139728539701 atol = ES_ATOL
+    @test c1 ≈ 0.45063991432805206 atol = ATOL
+    @test e1 ≈ 8.9013972917684878 atol = ES_ATOL
     ccdf, es = qfmgh(x, 0.0, z, A, C, z, z, -0.5, 1.0, 1.0)
     @test ccdf[1] ≈ c1 atol = 1e-8
     @test ccdf[701] ≈ cmid atol = 1e-8
@@ -48,7 +48,7 @@ end
     # Twenty-four thresholds are integrated directly. Twenty-five use the Chebyshev grid.
     c24, e24 = qfmgh(range(3.5, 17.5; length = 24), 0.0, z, A, C, z, z, -0.5, 1.0, 1.0)
     @test c24[1] ≈ 0.45063991441010837 atol = ATOL
-    @test c24[end] ≈ 0.03923559352643207 atol = ATOL
+    @test c24[end] ≈ 0.039235590360226835 atol = ATOL
     @test e24[1] ≈ 8.90139728539701 atol = ES_ATOL
     c25, e25 = qfmgh(range(3.5, 17.5; length = 25), 0.0, z, A, C, z, z, -0.5, 1.0, 1.0)
     @test c25[1] ≈ ccdf[1] atol = 1e-8
@@ -59,8 +59,8 @@ end
     one, onees = qfmgh(6.0, 0.0, z, A, C, z, z, -0.5, 1.0, 1.0)
     @test all(v -> v ≈ one, flat)
     @test all(v -> v ≈ onees, flates)
-    @test one ≈ 0.25373837265745125 atol = ATOL
-    @test onees ≈ 12.24495342880734 atol = ES_ATOL
+    @test one ≈ 0.25373837264351862 atol = ATOL
+    @test onees ≈ 12.24495343245469 atol = ES_ATOL
 
     # Chebyshev against the same rule evaluated at the threshold itself.
     xs = collect(x)
@@ -76,8 +76,8 @@ end
     xs = range(0.0, 12.0; length = 80)
     cs1, es1 = qfmgh(0.0, 0.4, a, A, C, mu, gam, -0.5, 1.2, 0.8)
     csend, esend = qfmgh(12.0, 0.4, a, A, C, mu, gam, -0.5, 1.2, 0.8)
-    @test cs1 ≈ 0.9999999966436798 atol = ATOL
-    @test es1 ≈ 7.331363902541845 atol = ES_ATOL
+    @test cs1 ≈ 0.99999999999985478 atol = ATOL
+    @test es1 ≈ 7.3313638840296527 atol = ES_ATOL
     cs, ess = qfmgh(xs, 0.4, a, A, C, mu, gam, -0.5, 1.2, 0.8)
     @test cs[1] ≈ cs1 atol = 1e-8
     @test cs[end] ≈ csend atol = 1e-8
@@ -98,8 +98,8 @@ end
 
     cg1, eg1 = qfmgh(1.0, 0.0, z, A, C, z, z, -1.3, 2.0, 1.1)
     cg20, eg20 = qfmgh(20.0, 0.0, z, A, C, z, z, -1.3, 2.0, 1.1)
-    @test cg1 ≈ 0.9186095325658532 atol = ATOL
-    @test eg1 ≈ 4.776914154468738 atol = ES_ATOL
+    @test cg1 ≈ 0.9186095322233282 atol = ATOL
+    @test eg1 ≈ 4.776914163023446 atol = ES_ATOL
     cg, eg = qfmgh(range(1.0, 20.0; length = 200), 0.0, z, A, C, z, z, -1.3, 2.0, 1.1)
     @test cg[1] ≈ cg1 atol = 1e-8
     @test cg[end] ≈ cg20 atol = 1e-8
@@ -108,8 +108,8 @@ end
 
     ci1, ei1 = qfmgh(1.0, 0.0, z, A, C, z, z, -2.0, 3.0, 1.0)
     ci15, ei15 = qfmgh(15.0, 0.0, z, A, C, z, z, -2.0, 3.0, 1.0)
-    @test ci1 ≈ 0.9417926650711783 atol = ATOL
-    @test ei1 ≈ 4.674253359582102 atol = ES_ATOL
+    @test ci1 ≈ 0.941792664715285 atol = ATOL
+    @test ei1 ≈ 4.6742533675775961 atol = ES_ATOL
     ci, ei = qfmgh(range(1.0, 15.0; length = 40), 0.0, z, A, C, z, z, -2.0, 3.0, 1.0)
     @test ci[1] ≈ ci1 atol = 1e-8
     @test ci[end] ≈ ci15 atol = 1e-8
@@ -140,8 +140,8 @@ end
     Ad = diagm(fill(0.0091703580324228, 10))
     Cd = diagm(fill(1.8898223650461363, 10))
     cp1, ep1p = qfmgh(3.5, a0, avec, Ad, Cd, z, z, -0.5, 1.0, 1.0)
-    @test cp1 ≈ 0.10147755602526368 atol = 1e-8
-    @test ep1p ≈ 5.801375708121332 atol = 1e-7
+    @test cp1 ≈ 0.10147755608993575 atol = 1e-8
+    @test ep1p ≈ 5.8013757041282803 atol = 1e-7
     cport, eport = qfmgh(range(3.5, 17.5; length = 1401), a0, avec, Ad, Cd, z, z, -0.5, 1.0, 1.0)
     @test cport[1] ≈ cp1 atol = 1e-8
     @test eport[1] ≈ ep1p atol = 1e-7
@@ -158,4 +158,11 @@ end
     c9, e9 = twosls_case(9.0, 0.0)
     @test c9 ≈ 0.7216659250848524 atol = 1e-8
     @test e9 ≈ 1.4181174952966877 atol = 1e-8
+
+    # χ = ψ = 400 concentrates the mixer. A fixed 32-node rule misses the
+    # survival by about 0.016 and the shortfall by about 0.2.
+    z2 = zeros(2)
+    cc, ec = qfmgh(2.0, 0.0, z2, diagm([1.0, 0.5]), Matrix{Float64}(I, 2, 2), z2, z2, -0.5, 400.0, 400.0)
+    @test cc ≈ 0.2572066792989306 atol = 1e-9
+    @test ec ≈ 3.6180484695108244 atol = 1e-8
 end
