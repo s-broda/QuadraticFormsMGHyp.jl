@@ -7,7 +7,7 @@
 [![pkgeval](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/Q/QuadraticFormsMGHyp.svg)](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/Q/QuadraticFormsMGHyp.html)
 [![DOI](https://zenodo.org/badge/244015145.svg)](https://zenodo.org/badge/latestdoi/244015145)
 
-A package for evaluating tail probabilities and partial moments of quadratic forms in multivariate generalized hyperbolic random vectors. The exact values are a mapped Gauss–Legendre rule, doubled until successive refinements agree, with a closed form for the normal-inverse-Gaussian and boundary cases and a Chebyshev grid on long threshold lists. Matlab and Fortran code is available [here](https://github.com/s-broda/es4mgh). A C implementation of the same rule is available as [QuadraticFormsMGHyp](https://github.com/s-broda/QuadraticFormsMGHyp-py).
+A package for evaluating tail probabilities and partial moments of quadratic forms in multivariate generalized hyperbolic random vectors. The exact values are a mapped Gauss–Legendre rule, doubled until successive refinements agree, with a closed form for the normal-inverse-Gaussian and boundary cases and a Chebyshev grid on long threshold lists. `chi = psi = Inf` is the Gaussian limit, with the mixer fixed at 1. A low-rank Gaussian spectrum is integrated in panels. Matlab and Fortran code is available [here](https://github.com/s-broda/es4mgh). A C implementation of the same rule is available as [QuadraticFormsMGHyp](https://github.com/s-broda/QuadraticFormsMGHyp-py).
 
 # Installation
 The package can be installed with `using Pkg; Pkg.add("QuadraticFormsMGHyp")`.

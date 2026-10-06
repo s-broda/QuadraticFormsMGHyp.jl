@@ -2,6 +2,7 @@
 # once the mixing density concentrates, and the easy cases move in the 10th digit.
 using LinearAlgebra
 using QuadraticFormsMGHyp
+using SpecialFunctions: erfc
 
 const ATOL = 1e-9
 const ES_ATOL = 1e-8
@@ -165,4 +166,51 @@ end
     cc, ec = qfmgh(2.0, 0.0, z2, diagm([1.0, 0.5]), Matrix{Float64}(I, 2, 2), z2, z2, -0.5, 400.0, 400.0)
     @test cc ≈ 0.2572066792989306 atol = 1e-9
     @test ec ≈ 3.6180484695108244 atol = 1e-8
+
+    # χ = ψ = +∞ fixes the mixer at 1. λ is unused.
+    # L = Z² is chi-squared on one degree; L = Z is standard normal.
+    pchi(x) = erfc(sqrt(x / 2.0))
+    eschi(x) = 1.0 + sqrt(x) * exp(-0.5 * x) * sqrt(2.0 / π) / pchi(x)
+    pnorm(x) = 0.5 * erfc(x / sqrt(2.0))
+    esnorm(x) = exp(-0.5 * x * x) / sqrt(2.0 * π) / pnorm(x)
+    for lam in (-0.5, 3.0), x in (0.5, 1.0, 4.0)
+        cg, eg = qfmgh(x, 0.0, [0.0], ones(1, 1), ones(1, 1), [0.0], [0.0], lam, Inf, Inf)
+        @test cg ≈ pchi(x) atol = 1e-9
+        @test eg ≈ eschi(x) atol = 1e-8
+    end
+    for x in (-1.0, 0.0, 1.5)
+        cg, eg = qfmgh(x, 0.0, [1.0], zeros(1, 1), ones(1, 1), [0.0], [0.0], -0.5, Inf, Inf)
+        @test cg ≈ pnorm(x) atol = 1e-9
+        @test eg ≈ esnorm(x) atol = 1e-8
+    end
+    for x in (0.0, 1.0)
+        zc = x - 0.5
+        cg, eg = qfmgh(x, 0.0, [1.0], zeros(1, 1), ones(1, 1), [0.0], [0.5], 1.0, Inf, Inf)
+        @test cg ≈ pnorm(zc) atol = 1e-9
+        @test eg ≈ 0.5 + exp(-0.5 * zc * zc) / sqrt(2.0 * π) / pnorm(zc) atol = 1e-8
+    end
+    xs = collect(range(0.25, 6.0; length = 40))
+    cg, eg = qfmgh(xs, 0.0, [0.0], ones(1, 1), ones(1, 1), [0.0], [0.0], 0.0, Inf, Inf)
+    @test maximum(abs, cg .- pchi.(xs)) < 1e-8
+    @test maximum(abs, eg .- eschi.(xs)) < 1e-7
+    # A constant quadratic form is an atom. The strict tail is 0 at and above it.
+    cc, ec = qfmgh(-0.2, 3.0, [0.0], zeros(1, 1), ones(1, 1), [0.0], [0.0], 0.0, Inf, Inf)
+    @test cc == 1.0
+    @test ec == 3.0
+    cc, ec = qfmgh(3.0, 3.0, [0.0], zeros(1, 1), ones(1, 1), [0.0], [0.0], 0.0, Inf, Inf)
+    @test cc == 0.0
+    @test isnan(ec)
+    # Farther chi-square tail, and the exponential law χ²_2.
+    cg, eg = qfmgh(10.0, 0.0, [0.0], ones(1, 1), ones(1, 1), [0.0], [0.0], 0.0, Inf, Inf)
+    @test cg ≈ pchi(10.0) rtol = 1e-7
+    @test eg ≈ eschi(10.0) rtol = 1e-7
+    cg, eg = qfmgh(0.0, 0.0, [0.0], ones(1, 1), ones(1, 1), [0.0], [0.0], 0.0, Inf, Inf)
+    @test cg ≈ 1.0 atol = 1e-8
+    @test eg ≈ 1.0 atol = 1e-8
+    z2 = zeros(2)
+    for x in (1.0, 4.0)
+        cg, eg = qfmgh(x, 0.0, z2, Matrix{Float64}(I, 2, 2), Matrix{Float64}(I, 2, 2), z2, z2, 0.0, Inf, Inf)
+        @test cg ≈ exp(-0.5 * x) rtol = 1e-8
+        @test eg ≈ x + 2.0 rtol = 1e-8
+    end
 end

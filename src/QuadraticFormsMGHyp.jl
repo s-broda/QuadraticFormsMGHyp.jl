@@ -34,7 +34,7 @@ Keyword arguments:
     `do_spa`: whether to return the exact result or a saddlepoint approximation
     `order`: order of the saddlepoint approximation
 
-The exact result is a mapped Gauss–Legendre rule. The order doubles until successive refinements agree to a relative tolerance of 1e-7, up to 4096 nodes. Lists of more than 24 thresholds are reduced to a Chebyshev series.
+The exact result is a mapped Gauss–Legendre rule. The order doubles until successive refinements agree to a relative tolerance of 1e-7, up to 4096 nodes. Lists of more than 24 thresholds are reduced to a Chebyshev series. `chi = psi = Inf` is the Gaussian limit: the mixer is the constant 1, for any `lam`. A low-rank Gaussian spectrum is integrated in panels, because its characteristic function decays only as a power of the frequency.
 
  (c) 2020 S.A. Broda
 """
@@ -56,10 +56,11 @@ function qfmgh(
     do_spa::Bool = false,
     order::Int = 2,
 )
-    if (do_spa && (lam>=0 || chi<= 0 ||  any(gam .!= 0 )))
+    gaussian = isinf(chi) && isinf(psi) && chi > 0 && psi > 0
+    if (do_spa && (lam>=0 || chi<= 0 ||  any(gam .!= 0 ) || gaussian))
         @warn "Saddlepoint approximation is inaccurate with these parameters."
     end
-    if !do_spa
+    if !do_spa || gaussian
         return quadrature_eval(x, a0, a, A, C, mu, gam, lam, chi, psi)
     end
 
@@ -204,6 +205,7 @@ include("quadrature.jl")
 	@compile_workload begin
 		ccdf, pm = qfmgh(5.991, 0., zeros(2), [1.0 0.; 0. 1.], [1. 0.; 0. 1.], zeros(2), zeros(2), -10/2, 10, 0., do_spa=false)
         ccdf, pm = qfmgh(range(3.5, 17.5; length=32), 0., zeros(10), 0.5I(10), Matrix{Float64}(I, 10, 10), zeros(10), zeros(10), -0.5, 1.0, 1.0)
+        ccdf, pm = qfmgh(1.0, 0., [1.0], zeros(1, 1), ones(1, 1), zeros(1), zeros(1), 0.0, Inf, Inf)
         ccdf, pm = qfmgh(5.991, 0., zeros(2), [1.0 0.; 0. 1.], [1. 0.; 0. 1.], zeros(2), zeros(2), -10/2, 10, 0., do_spa=true)
 	end # precompile block
 end # if

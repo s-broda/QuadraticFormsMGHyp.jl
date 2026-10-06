@@ -7,10 +7,15 @@ const KIND_GENERAL = 0
 const KIND_NIG = 1
 const KIND_HALF = 2
 const KIND_PSI0 = 3
+const KIND_GAUSS = 4
 const IM = ComplexF64(0.0, 1.0)
 const LOG2F = log(2.0)
 const REL_QUAD = 1e-7
 const NNODE_CAP = 4096
+# A Gaussian spectrum whose mapped truncation sits above this bound decays
+# too slowly for one panel. The panel rule below is used instead.
+const GAUSS_FAST_UB = 0.91
+const GAUSS_XT = 800.0
 
 struct Prepared
     kind::Int
@@ -88,6 +93,8 @@ function gauss_legendre(n::Int)
     return x, w
 end
 
+const GAUSS_GX, GAUSS_GW = gauss_legendre(12)
+
 function integration_ub(omega::AbstractVector{Float64})
     o = sort!(abs.(filter(a -> a > 0.0, omega)), rev = true)
     m = length(o)
@@ -113,7 +120,7 @@ function half_order(nu::Float64)
 end
 
 function default_nnode(kind::Int)
-    (kind == KIND_NIG || kind == KIND_GENERAL) && return 32
+    (kind == KIND_NIG || kind == KIND_GENERAL || kind == KIND_GAUSS) && return 32
     kind == KIND_HALF && return 48
     return 64
 end
@@ -121,7 +128,7 @@ end
 function cheb_order(kind::Int)
     # First degree tried. The normal-inverse-Gaussian tail has settled by 20.
     # Other laws start higher and still grow until the last coefficient is small.
-    kind == KIND_NIG && return 20
+    (kind == KIND_NIG || kind == KIND_GAUSS) && return 20
     return 48
 end
 
@@ -225,6 +232,18 @@ function prepare_spectral(omega_all, d_all, e_all, ccoef, k, kk, lam, chi, psi)
     @inbounds for i = 1:ne
         (e2[i] != 0.0 || de[i] != 0.0) && (need_a1 = true)
     end
+    ub = integration_ub(omega_all)
+    sum_om = isempty(omega_all) ? 0.0 : sum(omega_all)
+    # χ = ψ = +∞ is the degenerate mixer W ≡ 1, for any λ.
+    # X is then Gaussian with mean μ + γ and covariance CCᵀ.
+    # The truncation uses |ω|: a negative eigenvalue decays like a positive one.
+    if isinf(chi) && isinf(psi) && chi > 0.0 && psi > 0.0
+        ub = integration_ub(abs.(omega_all))
+        M20 = k + ccoef + sum_om
+        return Layout(KIND_GAUSS, Float64(kk), Float64(lam), Float64(chi), Float64(psi),
+                      0.0, M20, need_a1, Float64(ccoef), Float64(k),
+                      D2z, E2z, DEz, ub, omega, d2, e2, de, 0)
+    end
     LK2 = lklam_real_f(lam, chi, psi)
     kind = KIND_GENERAL
     if abs(lam + 0.5) < 1e-12 && chi > 0.0 && psi > 0.0
@@ -237,10 +256,8 @@ function prepare_spectral(omega_all, d_all, e_all, ccoef, k, kk, lam, chi, psi)
     if kind == KIND_PSI0 && need_a1
         kind = half_order(lam) ? KIND_HALF : KIND_GENERAL
     end
-    ub = integration_ub(omega_all)
     lm1 = lklam_real_f(lam + 1.0, chi, psi) - LK2
     lm2 = lklam_real_f(lam + 2.0, chi, psi) - LK2
-    sum_om = isempty(omega_all) ? 0.0 : sum(omega_all)
     # The skewness term carries E[W^2]. When that coefficient is zero the
     # product is zero even if the moment is infinite (integer λ, ψ = 0).
     skew = k == 0.0 ? 0.0 : real(exp(lm2) * k)
@@ -297,6 +314,17 @@ function materialize(L::Layout, nn::Int)
         a2p += s * L.D2z
         a1p += s * L.E2z + L.k
         lr += 2.0 * s * L.DEz + L.ccoef
+        if L.kind == KIND_GAUSS
+            # log ρ + α₁ + α₂. Evaluation subtracts i u q, which is i t.
+            chi_base[i] = 0.0
+            psi_node[i] = 0.0
+            lrho[i] = s * L.ccoef + s2 * t3 + 0.5 * t4 + L.k * s + 0.5 * s2 * (t1 + t2)
+            a2pv[i] = a2p
+            a1pv[i] = a1p
+            lrp[i] = lr
+            log_psi[i] = 0.0
+            continue
+        end
         chi_base[i] = L.chi - s2 * t1
         pnode = L.psi - 2.0 * (L.k * s + 0.5 * s2 * t2)
         psi_node[i] = pnode
@@ -319,6 +347,27 @@ function finish_tail(E::Prepared, Ic::Float64, Ip::Float64)
     cval = 0.5 + rp * Ic
     es = (0.5 * E.M20 + rp * Ip) / cval + E.kk
     return cval, es
+end
+
+function eval_gauss!(E::Prepared, x, ccdf, es)
+    nn = E.nnode
+    need = E.need_a1
+    @inbounds for qi in eachindex(x)
+        q = x[qi] - E.kk
+        Ic = 0.0
+        Ip = 0.0
+        for i = 1:nn
+            lm = E.lrho[i] - IM * (E.u[i] * q)
+            Ic += E.wo[i] * imag_exp(lm)
+            acc = imag_exp_mul(lm, E.a2p[i]) + imag_exp_mul(lm, E.lrp[i])
+            if need
+                acc += imag_exp_mul(lm, E.a1p[i])
+            end
+            Ip += E.wo[i] * acc
+        end
+        ccdf[qi], es[qi] = finish_tail(E, Ic, Ip)
+    end
+    return nothing
 end
 
 function eval_nig!(E::Prepared, x, ccdf, es)
@@ -389,7 +438,17 @@ function eval_point(E::Prepared, q::Float64)
     Ic = 0.0
     Ip = 0.0
     need = E.need_a1
-    if E.kind == KIND_NIG
+    if E.kind == KIND_GAUSS
+        @inbounds for i = 1:nn
+            lm = E.lrho[i] - IM * (E.u[i] * q)
+            Ic += E.wo[i] * imag_exp(lm)
+            acc = imag_exp_mul(lm, E.a2p[i]) + imag_exp_mul(lm, E.lrp[i])
+            if need
+                acc += imag_exp_mul(lm, E.a1p[i])
+            end
+            Ip += E.wo[i] * acc
+        end
+    elseif E.kind == KIND_NIG
         log_half_pi = log(0.5 * π)
         @inbounds for i = 1:nn
             chi = E.chi_base[i] + IM * (2.0 * E.u[i] * q)
@@ -444,7 +503,10 @@ function eval_point(E::Prepared, q::Float64)
 end
 
 function eval_direct!(E::Prepared, x, ccdf, es)
-    if E.kind == KIND_NIG
+    if E.kind == KIND_GAUSS
+        eval_gauss!(E, x, ccdf, es)
+        return nothing
+    elseif E.kind == KIND_NIG
         eval_nig!(E, x, ccdf, es)
         return nothing
     elseif E.kind == KIND_PSI0
@@ -528,10 +590,189 @@ function outputs_settled(a, b)
     return true
 end
 
+# Log characteristic function of the centered Gaussian quadratic form, and the
+# partial-moment factor β, at a real frequency t. s = i t.
+function gauss_phase(L::Layout, t::Float64)
+    s = IM * t
+    s2 = s * s
+    t1 = zero(ComplexF64)
+    t2 = zero(ComplexF64)
+    t3 = zero(ComplexF64)
+    t4 = zero(ComplexF64)
+    a2p = zero(ComplexF64)
+    a1p = zero(ComplexF64)
+    lr = zero(ComplexF64)
+    @inbounds for j in eachindex(L.omega)
+        nu = 1.0 / (1.0 - 2.0 * L.omega[j] * s)
+        nu2 = nu * nu
+        t1 += L.d2[j] * nu
+        t2 += L.e2[j] * nu
+        t3 += L.de[j] * nu
+        t4 += log(nu)
+        a2p += s * L.d2[j] * nu + s2 * L.d2[j] * L.omega[j] * nu2
+        a1p += s * L.e2[j] * nu + s2 * L.e2[j] * L.omega[j] * nu2
+        lr += 2.0 * s * L.de[j] * nu + 2.0 * s2 * L.de[j] * L.omega[j] * nu2 + L.omega[j] * nu
+    end
+    t1 += L.D2z
+    t2 += L.E2z
+    t3 += L.DEz
+    a2p += s * L.D2z
+    a1p += s * L.E2z + L.k
+    lr += 2.0 * s * L.DEz + L.ccoef
+    lm0 = s * L.ccoef + s2 * t3 + 0.5 * t4 + L.k * s + 0.5 * s2 * (t1 + t2)
+    beta = a2p + lr
+    L.need_a1 && (beta += a1p)
+    return lm0, beta
+end
+
+function gauss_tail_pair(L::Layout, Ic::Float64, Ip::Float64)
+    cval = 0.5 + rp * Ic
+    es = (0.5 * L.M20 + rp * Ip) / cval + L.kk
+    return cval, es
+end
+
+# ∫_T^∞ h(t) exp(-i q t) dt, three terms, h and the partial-moment numerator.
+function gauss_ibp!(L::Layout, q::Float64, T::Float64)
+    δ = min(1e-7 * (1.0 + T), 0.05 * T)
+    function hv(t)
+        lm0, beta = gauss_phase(L, t)
+        re = real(lm0)
+        if re < -700.0 || re > 700.0
+            z = zero(ComplexF64)
+            return z, z
+        end
+        e = exp(lm0)
+        return e / t, e * beta / t
+    end
+    hm, pm = hv(T - δ)
+    h0, p0 = hv(T)
+    hp, pp = hv(T + δ)
+    h1 = (hp - hm) / (2.0 * δ)
+    p1 = (pp - pm) / (2.0 * δ)
+    h2 = (hp - 2.0 * h0 + hm) / (δ * δ)
+    p2 = (pp - 2.0 * p0 + pm) / (δ * δ)
+    iq = IM * q
+    iq2 = iq * iq
+    osc = exp(-IM * q * T)
+    tc = osc * (h0 / iq + h1 / iq2 + h2 / (iq2 * iq))
+    tp = osc * (p0 / iq + p1 / iq2 + p2 / (iq2 * iq))
+    return imag(tc), imag(tp)
+end
+
+function gauss_panel_osc(L::Layout, q::Float64)
+    aq = abs(q)
+    T = GAUSS_XT / aq
+    wosc = π / (2.0 * aq)
+    a = 0.0
+    Ic = 0.0
+    Ip = 0.0
+    @inbounds while a < T
+        w = min(wosc, max(1.0, 0.25 * a), T - a)
+        w <= 0.0 && break
+        mid = a + 0.5 * w
+        half = 0.5 * w
+        for i in eachindex(GAUSS_GX)
+            t = mid + half * GAUSS_GX[i]
+            wt = half * GAUSS_GW[i]
+            lm0, beta = gauss_phase(L, t)
+            lm = lm0 - IM * (t * q)
+            Ic += wt * imag_exp(lm) / t
+            Ip += wt * imag_exp_mul(lm, beta) / t
+        end
+        a += w
+    end
+    tc, tp = gauss_ibp!(L, q, T)
+    return gauss_tail_pair(L, Ic + tc, Ip + tp)
+end
+
+# q = 0 has no Gil-Pelaez oscillation. The log substitution integrates the
+# algebraic tail of a characteristic function that decays as a power.
+function gauss_panel_zero(L::Layout)
+    Ic = 0.0
+    Ip = 0.0
+    a = 0.0
+    @inbounds while a < 1.0
+        w = min(0.05, 1.0 - a)
+        w <= 0.0 && break
+        mid = a + 0.5 * w
+        half = 0.5 * w
+        for i in eachindex(GAUSS_GX)
+            t = mid + half * GAUSS_GX[i]
+            wt = half * GAUSS_GW[i]
+            lm0, beta = gauss_phase(L, t)
+            Ic += wt * imag_exp(lm0) / t
+            Ip += wt * imag_exp_mul(lm0, beta) / t
+        end
+        a += w
+    end
+    a = 0.0
+    @inbounds while a < 80.0
+        w = min(0.5, 80.0 - a)
+        w <= 0.0 && break
+        mid = a + 0.5 * w
+        half = 0.5 * w
+        for i in eachindex(GAUSS_GX)
+            z = mid + half * GAUSS_GX[i]
+            wt = half * GAUSS_GW[i]
+            t = exp(z)
+            lm0, beta = gauss_phase(L, t)
+            Ic += wt * imag_exp(lm0)
+            Ip += wt * imag_exp_mul(lm0, beta)
+        end
+        a += w
+    end
+    return gauss_tail_pair(L, Ic, Ip)
+end
+
+function gauss_kernel_var(L::Layout)
+    # sum (d + e)^2 on the kernel. Positive means a Gaussian factor exp(-c t^2).
+    return L.D2z + L.E2z + 2.0 * L.DEz
+end
+
+function gauss_is_constant(L::Layout)
+    return L.kind == KIND_GAUSS && isempty(L.omega) && gauss_kernel_var(L) <= 0.0
+end
+
+function gauss_needs_panel(L::Layout)
+    L.kind == KIND_GAUSS || return false
+    gauss_is_constant(L) && return false
+    return gauss_kernel_var(L) <= 0.0 && L.ub > GAUSS_FAST_UB
+end
+
+function eval_gauss_constant!(L::Layout, x, ccdf, es)
+    @inbounds for qi in eachindex(x)
+        q = x[qi] - L.kk
+        if q < 0.0
+            ccdf[qi] = 1.0
+            es[qi] = L.kk
+        else
+            ccdf[qi] = 0.0
+            es[qi] = NaN
+        end
+    end
+    return nothing
+end
+
+function eval_gauss_panel!(L::Layout, x, ccdf, es)
+    @inbounds for qi in eachindex(x)
+        q = x[qi] - L.kk
+        if abs(q) < 1e-12
+            ccdf[qi], es[qi] = gauss_panel_zero(L)
+        else
+            ccdf[qi], es[qi] = gauss_panel_osc(L, q)
+        end
+    end
+    return nothing
+end
+
 # Compare n nodes with the next refinement on these thresholds.
 # Remember the coarse order that agreed, and return the finer values.
 # At the cap, return the finest table even if the test is still open.
 function certify!(L::Layout, x, ccdf, es)
+    if gauss_needs_panel(L)
+        eval_gauss_panel!(L, x, ccdf, es)
+        return nothing
+    end
     n = length(x)
     n <= 0 && return nothing
     nn = L.nlo > 0 ? L.nlo : default_nnode(L.kind)
@@ -569,6 +810,10 @@ end
 function eval_quad!(L::Layout, x, ccdf, es)
     n = length(x)
     n <= 0 && return nothing
+    if gauss_is_constant(L)
+        eval_gauss_constant!(L, x, ccdf, es)
+        return nothing
+    end
     if n <= 24
         certify!(L, x, ccdf, es)
         return nothing
